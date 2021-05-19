@@ -103,16 +103,15 @@ class SolverImpl(upf.Solver):
         actions = []
         for s in pytamer.tamer_ttplan_get_steps(ttplan):
             taction = pytamer.tamer_ttplan_step_get_action(s)
-            n = pytamer.tamer_ttplan_step_get_num_parameters(s)
+            name = pytamer.tamer_action_get_name(taction)
+            action = problem.action(name)
             params = []
-            for i in range(n):
-                p = pytamer.tamer_ttplan_step_get_parameter(s, i)
+            for p in pytamer.tamer_ttplan_step_get_parameters(s):
                 if pytamer.tamer_expr_is_boolean_constant(self.env, p) == 1:
                     new_p = upf.expression.Bool(pytamer.tamer_expr_get_boolean_constant(self.env, p) == 1)
                 else:
                     raise
                 params.append(new_p)
-            action = problem.action(pytamer.tamer_action_get_name(taction))
             actions.append(upf.ActionInstance(action, tuple(params)))
         return upf.SequentialPlan(actions)
 
