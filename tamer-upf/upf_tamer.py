@@ -18,81 +18,88 @@ from upf_tamer.converter import Converter
 
 
 class SolverImpl(upf.Solver):
-    def solve(self, problem):
-        env = pytamer.tamer_env_new()
+    def __init__(self):
+        self.env = pytamer.tamer_env_new()
+        self.bool_type = pytamer.tamer_boolean_type(self.env)
+        self.tamer_start = \
+            pytamer.tamer_expr_make_point_interval(self.env,
+                                                   pytamer.tamer_expr_make_start_anchor(self.env))
+        self.tamer_end = \
+            pytamer.tamer_expr_make_point_interval(self.env,
+                                                   pytamer.tamer_expr_make_end_anchor(self.env))
 
-        fluents = []
-        fluents_map = {}
-        bool_type = pytamer.tamer_boolean_type(env)
-        for f in problem.fluents().values():
-            name = f.name()
-            typename = f.type()
-            if typename.is_bool_type():
-                ttype = bool_type
+    def _convert_fluent(self, fluent):
+        name = fluent.name()
+        typename = fluent.type()
+        if typename.is_bool_type():
+            ttype = self.bool_type
+        else:
+            raise
+        params = []
+        i = 0
+        for t in fluent.signature():
+            if t.is_bool_type():
+                ptype = self.bool_type
             else:
                 raise
-            params = []
-            i = 0
-            for t in f.signature():
-                if t.is_bool_type():
-                    ptype = bool_type
-                else:
-                    raise
-                p = pytamer.tamer_parameter_new("p"+str(i), ptype)
-                i += 1
-                params.append(p)
-            new_f = pytamer.tamer_fluent_new(env, name, ttype, [], 0, params, len(params))
+            p = pytamer.tamer_parameter_new("p"+str(i), ptype)
+            i += 1
+            params.append(p)
+        return pytamer.tamer_fluent_new(self.env, name, ttype, [], params)
+
+    def _convert_action(self, action, fluents_map):
+        params = []
+        params_map = {}
+        for p in action.parameters():
+            if p.type().is_bool_type():
+                ptype = self.bool_type
+            else:
+                raise
+            new_p = pytamer.tamer_parameter_new(p.name(), ptype)
+            params.append(new_p)
+            params_map[p] = new_p
+        expressions = []
+        converter = Converter(self.env, fluents_map, params_map)
+        for c in action.preconditions():
+            expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start,
+                                                               converter.convert(c))
+            expressions.append(expr)
+        for f, v in action.effects():
+            ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(f), converter.convert(v))
+            expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_end, ass)
+            expressions.append(expr)
+        expr = pytamer.tamer_expr_make_assign(self.env, pytamer.tamer_expr_make_duration_anchor(self.env),
+                                              pytamer.tamer_expr_make_integer_constant(self.env, 1))
+        expressions.append(expr)
+        return pytamer.tamer_action_new(self.env, action.name(), [], params, expressions)
+
+    def _convert_problem(self, problem):
+        fluents = []
+        fluents_map = {}
+        for f in problem.fluents().values():
+            new_f = self._convert_fluent(f)
             fluents.append(new_f)
             fluents_map[f] = new_f
 
         actions = []
         for a in problem.actions().values():
-            params = []
-            params_map = {}
-            for p in a.parameters():
-                if p.type().is_bool_type():
-                    ptype = bool_type
-                else:
-                    raise
-                new_p = pytamer.tamer_parameter_new(p.name(), ptype)
-                params.append(new_p)
-                params_map[p] = new_p
-            expressions = []
-            converter = Converter(env, fluents_map, params_map)
-            for c in a.preconditions():
-                i = pytamer.tamer_expr_make_point_interval(env, pytamer.tamer_expr_make_start_anchor(env))
-                expr = pytamer.tamer_expr_make_temporal_expression(env, i, converter.convert(c))
-                expressions.append(expr)
-            for f, v in a.effects():
-                i = pytamer.tamer_expr_make_point_interval(env, pytamer.tamer_expr_make_start_anchor(env))
-                ass = pytamer.tamer_expr_make_assign(env, converter.convert(f), converter.convert(v))
-                expr = pytamer.tamer_expr_make_temporal_expression(env, i, ass)
-                expressions.append(expr)
-            expr = pytamer.tamer_expr_make_assign(env, pytamer.tamer_expr_make_duration_anchor(env),
-                                                  pytamer.tamer_expr_make_integer_constant(env, 1))
-            expressions.append(expr)
-            new_a = pytamer.tamer_action_new(env, a.name(), [], 0, params, len(params),
-                                             expressions, len(expressions))
+            new_a = self._convert_action(a, fluents_map)
             actions.append(new_a)
 
-        converter = Converter(env, fluents_map)
         expressions = []
+        converter = Converter(self.env, fluents_map)
         for f, v in problem.initial_values().items():
-            i = pytamer.tamer_expr_make_point_interval(env, pytamer.tamer_expr_make_start_anchor(env))
-            ass = pytamer.tamer_expr_make_assign(env, converter.convert(f), converter.convert(v))
-            expr = pytamer.tamer_expr_make_temporal_expression(env, i, ass)
+            ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(f), converter.convert(v))
+            expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start, ass)
             expressions.append(expr)
         for g in problem.goals():
-            i = pytamer.tamer_expr_make_point_interval(env, pytamer.tamer_expr_make_end_anchor(env))
-            expr = pytamer.tamer_expr_make_temporal_expression(env, i, converter.convert(g))
+            expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_end,
+                                                               converter.convert(g))
             expressions.append(expr)
 
-        tproblem = pytamer.tamer_problem_new(env, actions, len(actions), fluents, len(fluents),
-                                             [], 0, [], 0, [], 0, expressions, len(expressions))
+        return pytamer.tamer_problem_new(self.env, actions, fluents, [], [], [], expressions)
 
-        potplan = pytamer.tamer_do_tsimple_planning(tproblem)
-        ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
-
+    def _to_upf_plan(self, problem, ttplan):
         actions = []
         for s in pytamer.tamer_ttplan_get_steps(ttplan):
             taction = pytamer.tamer_ttplan_step_get_action(s)
@@ -100,16 +107,24 @@ class SolverImpl(upf.Solver):
             params = []
             for i in range(n):
                 p = pytamer.tamer_ttplan_step_get_parameter(s, i)
-                if pytamer.tamer_expr_is_boolean_constant(env, p) == 1:
-                    new_p = upf.expression.Bool(pytamer.tamer_expr_get_boolean_constant(env, p) == 1)
+                if pytamer.tamer_expr_is_boolean_constant(self.env, p) == 1:
+                    new_p = upf.expression.Bool(pytamer.tamer_expr_get_boolean_constant(self.env, p) == 1)
                 else:
                     raise
                 params.append(new_p)
-
             action = problem.action(pytamer.tamer_action_get_name(taction))
             actions.append(upf.ActionInstance(action, tuple(params)))
-
         return upf.SequentialPlan(actions)
+
+    def _solve(self, tproblem):
+        potplan = pytamer.tamer_do_tsimple_planning(tproblem)
+        ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
+        return ttplan
+
+    def solve(self, problem):
+        tproblem = self._convert_problem(problem)
+        ttplan = self._solve(tproblem)
+        return self._to_upf_plan(problem, ttplan)
 
     def destroy(self):
         pass
