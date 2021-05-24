@@ -18,10 +18,11 @@ import pytamer
 
 
 class Converter(DagWalker):
-    def __init__(self, env, fluents={}, parameters={}):
+    def __init__(self, env, fluents={}, instances={}, parameters={}):
         DagWalker.__init__(self)
         self._env = env
         self._fluents = fluents
+        self._instances = instances
         self._parameters = parameters
 
     def convert(self, expression):
@@ -48,20 +49,31 @@ class Converter(DagWalker):
         assert len(args) == 2
         return pytamer.tamer_expr_make_iff(self._env, args[0], args[1])
 
+    def walk_equals(self, expression, args, **kwargs):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_equals(self._env, args[0], args[1])
+
     def walk_fluent_exp(self, expression, args, **kwargs):
         fluent = expression.fluent()
         ref = pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent])
         if len(args) == 0:
             return ref
         else:
-            return pytamer.tamer_expr_make_functional_apply(self._env, ref, args, len(args))
+            return pytamer.tamer_expr_make_functional_apply(self._env, ref, args)
 
     def walk_bool_constant(self, expression, args, **kwargs):
+        assert len(args) == 0
         if expression.is_true():
             return pytamer.tamer_expr_make_true(self._env)
         else:
             return pytamer.tamer_expr_make_false(self._env)
 
     def walk_param_exp(self, expression, args, **kwargs):
+        assert len(args) == 0
         p = expression.parameter()
         return pytamer.tamer_expr_make_parameter_reference(self._env, self._parameters[p])
+
+    def walk_object_exp(self, expression, args, **kwargs):
+        assert len(args) == 0
+        o = expression.object()
+        return pytamer.tamer_expr_make_instance_reference(self._env, self._instances[o])
