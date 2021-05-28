@@ -151,5 +151,8 @@ class SolverImpl(upf.Solver):
         ttplan = self._solve(tproblem)
         return self._to_upf_plan(problem, ttplan)
 
+    def is_oneshot_planner(self):
+        return True
+
     def destroy(self):
         pass

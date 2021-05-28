@@ -19,6 +19,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 cd ${DIR}/
 
+rm -rf Tamer Tamer.zip
 wget https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer.zip &> /dev/null
 unzip Tamer.zip &> /dev/null
 rm Tamer.zip

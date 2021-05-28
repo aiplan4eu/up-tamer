@@ -21,15 +21,12 @@ if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
     bindings_dir = os.path.expanduser(solver_install_site(plat_specific=True))
 
-    if os.path.exists(os.path.join(bindings_dir, 'pytamer.py')):
-        print('pytamer already installed!')
-    else:
-        shutil.copyfile(os.path.join(dir_path, 'Tamer', 'pytamer.py'), os.path.join(bindings_dir, 'pytamer.py'))
-        shutil.copyfile(os.path.join(dir_path, 'Tamer', '_pytamer.so'), os.path.join(bindings_dir, '_pytamer.so'))
-        print('pytamer installed successfully!')
+    shutil.copyfile(os.path.join(dir_path, 'Tamer', 'pytamer.py'), os.path.join(bindings_dir, 'pytamer.py'))
+    shutil.copyfile(os.path.join(dir_path, 'Tamer', '_pytamer.so'), os.path.join(bindings_dir, '_pytamer.so'))
+    print('pytamer installed successfully!')
 
     if os.path.exists(os.path.join(bindings_dir, 'upf_tamer')):
-        print('upf_tamer already installed!')
-    else:
-        shutil.copytree(os.path.join(dir_path, 'tamer-upf'), os.path.join(bindings_dir, 'upf_tamer'))
-        print('upf_tamer installed successfully!')
+        shutil.rmtree(os.path.join(bindings_dir, 'upf_tamer'))
+
+    shutil.copytree(os.path.join(dir_path, 'tamer-upf'), os.path.join(bindings_dir, 'upf_tamer'))
+    print('upf_tamer installed successfully!')
