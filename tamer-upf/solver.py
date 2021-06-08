@@ -14,6 +14,7 @@
 
 import upf
 import pytamer
+from upf.problem_kind import ProblemKind
 from upf_tamer.converter import Converter
 
 
@@ -27,6 +28,11 @@ class SolverImpl(upf.Solver):
         self.tamer_end = \
             pytamer.tamer_expr_make_point_interval(self.env,
                                                    pytamer.tamer_expr_make_end_anchor(self.env))
+        self.problem_kind = ProblemKind()
+        self.problem_kind.set_time('DISCRETE_TIME')
+        self.problem_kind.set_time('CONTINUOUS_TIME')
+        self.problem_kind.set_numbers('DISCRETE_NUMBERS')
+        self.problem_kind.set_numbers('CONTINUOUS_NUMBERS')
 
     def _convert_type(self, typename, user_types_map):
         if typename.is_bool_type():
@@ -177,6 +183,9 @@ class SolverImpl(upf.Solver):
         tproblem = self._convert_problem(problem)
         ttplan = self._solve(tproblem)
         return self._to_upf_plan(problem, ttplan)
+
+    def supports(self, problem_kind):
+        return problem_kind.features().issubset(self.problem_kind.features())
 
     def is_oneshot_planner(self):
         return True
