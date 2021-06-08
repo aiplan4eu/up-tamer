@@ -28,24 +28,45 @@ class SolverImpl(upf.Solver):
             pytamer.tamer_expr_make_point_interval(self.env,
                                                    pytamer.tamer_expr_make_end_anchor(self.env))
 
-    def _convert_fluent(self, fluent, user_types_map):
-        name = fluent.name()
-        typename = fluent.type()
+    def _convert_type(self, typename, user_types_map):
         if typename.is_bool_type():
             ttype = self.bool_type
         elif typename.is_user_type():
             ttype = user_types_map[typename]
+        elif typename.is_int_type():
+            lb = typename.lower_bound()
+            ub = typename.upper_bound()
+            if lb is None and ub is None:
+                ttype = pytamer.tamer_integer_type(self.env)
+            elif lb is None:
+                ttype = pytamer.tamer_integer_type_lb(self.env, lb)
+            elif ub is None:
+                ttype = pytamer.tamer_integer_type_ub(self.env, ub)
+            else:
+                ttype = pytamer.tamer_integer_type_lub(self.env, lb, ub)
+        elif typename.is_real_type():
+            lb = typename.lower_bound()
+            ub = typename.upper_bound()
+            if lb is None and ub is None:
+                ttype = pytamer.tamer_rational_type(self.env)
+            elif lb is None:
+                ttype = pytamer.tamer_rational_type_lb(self.env, lb)
+            elif ub is None:
+                ttype = pytamer.tamer_rational_type_ub(self.env, ub)
+            else:
+                ttype = pytamer.tamer_rational_type_lub(self.env, lb, ub)
         else:
             raise
+        return ttype
+
+    def _convert_fluent(self, fluent, user_types_map):
+        name = fluent.name()
+        typename = fluent.type()
+        ttype = self._convert_type(typename, user_types_map)
         params = []
         i = 0
         for t in fluent.signature():
-            if t.is_bool_type():
-                ptype = self.bool_type
-            elif t.is_user_type():
-                ptype = user_types_map[t]
-            else:
-                raise
+            ptype = self._convert_type(t, user_types_map)
             p = pytamer.tamer_parameter_new("p"+str(i), ptype)
             i += 1
             params.append(p)
@@ -55,12 +76,7 @@ class SolverImpl(upf.Solver):
         params = []
         params_map = {}
         for p in action.parameters():
-            if p.type().is_bool_type():
-                ptype = self.bool_type
-            elif p.type().is_user_type():
-                ptype = user_types_map[p.type()]
-            else:
-                raise
+            ptype = self._convert_type(p.type(), user_types_map)
             new_p = pytamer.tamer_parameter_new(p.name(), ptype)
             params.append(new_p)
             params_map[p] = new_p
@@ -119,6 +135,9 @@ class SolverImpl(upf.Solver):
         return pytamer.tamer_problem_new(self.env, actions, fluents, [], instances, user_types, expressions)
 
     def _to_upf_plan(self, problem, ttplan):
+        if ttplan is None:
+            return None
+        expr_manager = problem.env.expression_manager
         objects = {}
         for ut in problem.user_types().values():
             for obj in problem.objects(ut):
@@ -131,10 +150,16 @@ class SolverImpl(upf.Solver):
             params = []
             for p in pytamer.tamer_ttplan_step_get_parameters(s):
                 if pytamer.tamer_expr_is_boolean_constant(self.env, p) == 1:
-                    new_p = upf.expression.Bool(pytamer.tamer_expr_get_boolean_constant(self.env, p) == 1)
+                    new_p = expr_manager.Bool(pytamer.tamer_expr_get_boolean_constant(self.env, p) == 1)
                 elif pytamer.tamer_expr_is_instance_reference(self.env, p) == 1:
                     i = pytamer.tamer_expr_get_instance(self.env, p)
-                    new_p = objects[pytamer.tamer_instance_get_name(i)]
+                    new_p = expr_manager.ObjectExp(objects[pytamer.tamer_instance_get_name(i)])
+                elif pytamer.tamer_expr_is_integer_constant(self.env, p) == 1:
+                    i = pytamer.tamer_expr_get_integer_constant(self.env, p)
+                    new_p = expr_manager.Int(i)
+                elif pytamer.tamer_expr_is_rational_constant(self.env, p) == 1:
+                    n, d = pytamer.tamer_expr_get_rational_constant(self.env, p)
+                    new_p = expr_manager.Real(n, d)
                 else:
                     raise
                 params.append(new_p)
@@ -143,6 +168,8 @@ class SolverImpl(upf.Solver):
 
     def _solve(self, tproblem):
         potplan = pytamer.tamer_do_tsimple_planning(tproblem)
+        if pytamer.tamer_potplan_is_error(potplan) == 1:
+            return None
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 

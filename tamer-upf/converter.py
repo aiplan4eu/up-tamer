@@ -29,31 +29,27 @@ class Converter(DagWalker):
         """Converts the given expression."""
         return self.walk(expression)
 
-    def walk_and(self, expression, args, **kwargs):
+    def walk_and(self, expression, args):
         assert len(args) == 2
         return pytamer.tamer_expr_make_and(self._env, args[0], args[1])
 
-    def walk_or(self, expression, args, **kwargs):
+    def walk_or(self, expression, args):
         assert len(args) == 2
         return pytamer.tamer_expr_make_or(self._env, args[0], args[1])
 
-    def walk_not(self, expression, args, **kwargs):
+    def walk_not(self, expression, args):
         assert len(args) == 1
         return pytamer.tamer_expr_make_not(self._env, args[0])
 
-    def walk_implies(self, expression, args, **kwargs):
+    def walk_implies(self, expression, args):
         assert len(args) == 2
         return pytamer.tamer_expr_make_implies(self._env, args[0], args[1])
 
-    def walk_iff(self, expression, args, **kwargs):
+    def walk_iff(self, expression, args):
         assert len(args) == 2
         return pytamer.tamer_expr_make_iff(self._env, args[0], args[1])
 
-    def walk_equals(self, expression, args, **kwargs):
-        assert len(args) == 2
-        return pytamer.tamer_expr_make_equals(self._env, args[0], args[1])
-
-    def walk_fluent_exp(self, expression, args, **kwargs):
+    def walk_fluent_exp(self, expression, args):
         fluent = expression.fluent()
         ref = pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent])
         if len(args) == 0:
@@ -61,19 +57,57 @@ class Converter(DagWalker):
         else:
             return pytamer.tamer_expr_make_functional_apply(self._env, ref, args)
 
-    def walk_bool_constant(self, expression, args, **kwargs):
+    def walk_param_exp(self, expression, args):
+        assert len(args) == 0
+        p = expression.parameter()
+        return pytamer.tamer_expr_make_parameter_reference(self._env, self._parameters[p])
+
+    def walk_object_exp(self, expression, args):
+        assert len(args) == 0
+        o = expression.object()
+        return pytamer.tamer_expr_make_instance_reference(self._env, self._instances[o])
+
+    def walk_bool_constant(self, expression, args):
         assert len(args) == 0
         if expression.is_true():
             return pytamer.tamer_expr_make_true(self._env)
         else:
             return pytamer.tamer_expr_make_false(self._env)
 
-    def walk_param_exp(self, expression, args, **kwargs):
+    def walk_real_constant(self, expression, args):
         assert len(args) == 0
-        p = expression.parameter()
-        return pytamer.tamer_expr_make_parameter_reference(self._env, self._parameters[p])
+        n = expression.constant_value().numerator()
+        d = expression.constant_value().denominator()
+        return pytamer.tamer_expr_make_rational_constant(self._env, n, d)
 
-    def walk_object_exp(self, expression, args, **kwargs):
+    def walk_int_constant(self, expression, args):
         assert len(args) == 0
-        o = expression.object()
-        return pytamer.tamer_expr_make_instance_reference(self._env, self._instances[o])
+        return pytamer.tamer_expr_make_integer_constant(self._env, expression.constant_value())
+
+    def walk_plus(self, expression, args):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_plus(self._env, args[0], args[1])
+
+    def walk_minus(self, expression, args):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_minus(self._env, args[0], args[1])
+
+    def walk_times(self, expression, args):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_times(self._env, args[0], args[1])
+
+    def walk_div(self, expression, args):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_div(self._env, args[0], args[1])
+
+    def walk_le(self, expression, args):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_le(self._env, args[0], args[1])
+
+    def walk_lt(self, expression, args):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_lt(self._env, args[0], args[1])
+
+    def walk_equals(self, expression, args):
+        assert len(args) == 2
+        return pytamer.tamer_expr_make_equals(self._env, args[0], args[1])
