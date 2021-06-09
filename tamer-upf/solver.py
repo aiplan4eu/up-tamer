@@ -200,18 +200,18 @@ class SolverImpl(upf.Solver):
             for p in ai.parameters():
                 if p.is_object_exp():
                     i = instances_map[p.object().name()]
-                    pytamer.tamer_expr_make_instance_reference(self.env, i)
+                    params.append(pytamer.tamer_expr_make_instance_reference(self.env, i))
                 elif p.is_true():
-                    pytamer.tamer_expr_make_true(self.env)
+                    params.append(pytamer.tamer_expr_make_true(self.env))
                 elif p.is_false():
-                    pytamer.tamer_expr_make_false(self.env)
+                    params.append(pytamer.tamer_expr_make_false(self.env))
                 elif p.is_int_constant():
-                    pytamer.tamer_expr_make_integer_constant(self.env, p.constant_value())
+                    params.append(pytamer.tamer_expr_make_integer_constant(self.env, p.constant_value()))
                 elif p.is_real_constant():
                     f = p.constant_value()
                     n = numerator(f)
                     d = denominator(f)
-                    pytamer.tamer_expr_make_rational_constant(self.env, n, d)
+                    params.append(pytamer.tamer_expr_make_rational_constant(self.env, n, d))
                 else:
                     raise
             step = pytamer.tamer_ttplan_step_new(str(start), action, params, len(params), \
