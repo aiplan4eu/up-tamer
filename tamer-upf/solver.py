@@ -184,10 +184,54 @@ class SolverImpl(upf.Solver):
         ttplan = self._solve(tproblem)
         return self._to_upf_plan(problem, ttplan)
 
+    def _convert_plan(self, tproblem, plan):
+        assert isinstance(plan, upf.SequentialPlan)
+        actions_map = {}
+        for a in pytamer.tamer_problem_get_actions(tproblem):
+            actions_map[pytamer.tamer_action_get_name(a)] = a
+        instances_map = {}
+        for i in pytamer.tamer_problem_get_instances(tproblem):
+            instances_map[pytamer.tamer_instance_get_name(i)] = i
+        ttplan = pytamer.tamer_ttplan_new(self.env)
+        start = 0
+        for ai in plan.actions():
+            action = actions_map[ai.action().name()]
+            params = []
+            for p in ai.parameters():
+                if p.is_object_exp():
+                    i = instances_map[p.object().name()]
+                    pytamer.tamer_expr_make_instance_reference(self.env, i)
+                elif p.is_true():
+                    pytamer.tamer_expr_make_true(self.env)
+                elif p.is_false():
+                    pytamer.tamer_expr_make_false(self.env)
+                elif p.is_int_constant():
+                    pytamer.tamer_expr_make_integer_constant(self.env, p.constant_value())
+                elif p.is_real_constant():
+                    f = p.constant_value()
+                    n = numerator(f)
+                    d = denominator(f)
+                    pytamer.tamer_expr_make_rational_constant(self.env, n, d)
+                else:
+                    raise
+            step = pytamer.tamer_ttplan_step_new(str(start), action, params, len(params), \
+                                                 '1', pytamer.tamer_expr_make_true(self.env))
+            pytamer.tamer_ttplan_add_step(ttplan, step)
+            start += 2
+        return ttplan
+
+    def validate(self, problem, plan):
+        tproblem = self._convert_problem(problem)
+        tplan = self._convert_plan(tproblem, plan)
+        return pytamer.tamer_ttplan_validate(tproblem, tplan)
+
     def supports(self, problem_kind):
         return problem_kind.features().issubset(self.problem_kind.features())
 
     def is_oneshot_planner(self):
+        return True
+
+    def is_plan_validator(self):
         return True
 
     def destroy(self):
