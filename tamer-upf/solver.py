@@ -214,8 +214,8 @@ class SolverImpl(upf.Solver):
                     params.append(pytamer.tamer_expr_make_rational_constant(self.env, n, d))
                 else:
                     raise
-            step = pytamer.tamer_ttplan_step_new(str(start), action, params, len(params), \
-                                                 '1', pytamer.tamer_expr_make_true(self.env))
+            step = pytamer.tamer_ttplan_step_new(str(start), action, params, '1', \
+                                                 pytamer.tamer_expr_make_true(self.env))
             pytamer.tamer_ttplan_add_step(ttplan, step)
             start += 2
         return ttplan
