@@ -29,7 +29,6 @@ class SolverImpl(upf.Solver):
             pytamer.tamer_expr_make_point_interval(self.env,
                                                    pytamer.tamer_expr_make_end_anchor(self.env))
         self.problem_kind = ProblemKind()
-        self.problem_kind.set_time('DISCRETE_TIME')
         self.problem_kind.set_time('CONTINUOUS_TIME')
         self.problem_kind.set_numbers('DISCRETE_NUMBERS')
         self.problem_kind.set_numbers('CONTINUOUS_NUMBERS')
