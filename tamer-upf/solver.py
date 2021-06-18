@@ -19,8 +19,12 @@ from upf_tamer.converter import Converter
 
 
 class SolverImpl(upf.Solver):
-    def __init__(self):
+    def __init__(self, weight=None, heuristic=None, **options):
         self.env = pytamer.tamer_env_new()
+        if not weight is None:
+            pytamer.tamer_env_set_float_option(self.env, 'weight', weight)
+        if not heuristic is None:
+            pytamer.tamer_env_set_string_option(self.env, 'tsimple-heuristic', heuristic)
         self.bool_type = pytamer.tamer_boolean_type(self.env)
         self.tamer_start = \
             pytamer.tamer_expr_make_point_interval(self.env,
