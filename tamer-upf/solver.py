@@ -36,6 +36,10 @@ class SolverImpl(upf.Solver):
         self.problem_kind.set_time('CONTINUOUS_TIME')
         self.problem_kind.set_numbers('DISCRETE_NUMBERS')
         self.problem_kind.set_numbers('CONTINUOUS_NUMBERS')
+        self.problem_kind.set_typing('FLAT_TYPING')
+        self.problem_kind.set_conditions_kind('NEGATIVE_CONDITIONS')
+        self.problem_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS')
+        self.problem_kind.set_conditions_kind('EQUALITY')
 
     def _convert_type(self, typename, user_types_map):
         if typename.is_bool_type():
