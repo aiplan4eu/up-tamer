@@ -30,12 +30,26 @@ class Converter(DagWalker):
         return self.walk(expression)
 
     def walk_and(self, expression, args):
-        assert len(args) == 2
-        return pytamer.tamer_expr_make_and(self._env, args[0], args[1])
+        if len(args) == 0:
+            return pytamer.tamer_expr_make_true(self._env)
+        elif len(args) == 1:
+            return args[0]
+        else:
+            res = args[0]
+            for i in range(1, len(args)):
+                res = pytamer.tamer_expr_make_and(self._env, res, args[i])
+            return res
 
     def walk_or(self, expression, args):
-        assert len(args) == 2
-        return pytamer.tamer_expr_make_or(self._env, args[0], args[1])
+        if len(args) == 0:
+            return pytamer.tamer_expr_make_true(self._env)
+        elif len(args) == 1:
+            return args[0]
+        else:
+            res = args[0]
+            for i in range(1, len(args)):
+                res = pytamer.tamer_expr_make_or(self._env, res, args[i])
+            return res
 
     def walk_not(self, expression, args):
         assert len(args) == 1
@@ -76,8 +90,8 @@ class Converter(DagWalker):
 
     def walk_real_constant(self, expression, args):
         assert len(args) == 0
-        n = expression.constant_value().numerator()
-        d = expression.constant_value().denominator()
+        n = expression.constant_value().numerator
+        d = expression.constant_value().denominator
         return pytamer.tamer_expr_make_rational_constant(self._env, n, d)
 
     def walk_int_constant(self, expression, args):
