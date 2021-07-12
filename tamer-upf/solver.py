@@ -32,14 +32,6 @@ class SolverImpl(upf.Solver):
         self.tamer_end = \
             pytamer.tamer_expr_make_point_interval(self.env,
                                                    pytamer.tamer_expr_make_end_anchor(self.env))
-        self.problem_kind = ProblemKind()
-        self.problem_kind.set_time('CONTINUOUS_TIME')
-        self.problem_kind.set_numbers('DISCRETE_NUMBERS')
-        self.problem_kind.set_numbers('CONTINUOUS_NUMBERS')
-        self.problem_kind.set_typing('FLAT_TYPING')
-        self.problem_kind.set_conditions_kind('NEGATIVE_CONDITIONS')
-        self.problem_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS')
-        self.problem_kind.set_conditions_kind('EQUALITY')
 
     def _convert_type(self, typename, user_types_map):
         if typename.is_bool_type():
@@ -232,13 +224,24 @@ class SolverImpl(upf.Solver):
         tplan = self._convert_plan(tproblem, plan)
         return pytamer.tamer_ttplan_validate(tproblem, tplan)
 
-    def supports(self, problem_kind):
-        return problem_kind.features().issubset(self.problem_kind.features())
+    @staticmethod
+    def supports(problem_kind):
+        supported_kind = ProblemKind()
+        supported_kind.set_time('CONTINUOUS_TIME')
+        supported_kind.set_numbers('DISCRETE_NUMBERS')
+        supported_kind.set_numbers('CONTINUOUS_NUMBERS')
+        supported_kind.set_typing('FLAT_TYPING')
+        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS')
+        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS')
+        supported_kind.set_conditions_kind('EQUALITY')
+        return problem_kind.features().issubset(supported_kind.features())
 
-    def is_oneshot_planner(self):
+    @staticmethod
+    def is_oneshot_planner():
         return True
 
-    def is_plan_validator(self):
+    @staticmethod
+    def is_plan_validator():
         return True
 
     def destroy(self):
