@@ -197,7 +197,7 @@ class SolverImpl(upf.Solver):
         for ai in plan.actions():
             action = actions_map[ai.action().name()]
             params = []
-            for p in ai.parameters():
+            for p in ai.actual_parameters():
                 if p.is_object_exp():
                     i = instances_map[p.object().name()]
                     params.append(pytamer.tamer_expr_make_instance_reference(self.env, i))
