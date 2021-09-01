@@ -91,8 +91,9 @@ class SolverImpl(upf.Solver):
             expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start,
                                                                converter.convert(c))
             expressions.append(expr)
-        for f, v in action.effects():
-            ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(f), converter.convert(v))
+        for e in action.effects():
+            assert not e.is_conditional() and e.is_assignment()
+            ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(e.fluent()), converter.convert(e.value()))
             expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_end, ass)
             expressions.append(expr)
         expr = pytamer.tamer_expr_make_assign(self.env, pytamer.tamer_expr_make_duration_anchor(self.env),
