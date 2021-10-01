@@ -16,6 +16,7 @@ import upf
 import pytamer
 from upf.problem_kind import ProblemKind
 from upf_tamer.converter import Converter
+from fractions import Fraction
 
 
 class SolverImpl(upf.Solver):
@@ -25,6 +26,7 @@ class SolverImpl(upf.Solver):
             pytamer.tamer_env_set_float_option(self.env, 'weight', weight)
         if not heuristic is None:
             pytamer.tamer_env_set_string_option(self.env, 'tsimple-heuristic', heuristic)
+            # pytamer.tamer_env_set_string_option(self.env, 'ftp-heuristic', heuristic)
         self.bool_type = pytamer.tamer_boolean_type(self.env)
         self.tamer_start = \
             pytamer.tamer_expr_make_point_interval(self.env,
@@ -77,6 +79,62 @@ class SolverImpl(upf.Solver):
             params.append(p)
         return pytamer.tamer_fluent_new(self.env, name, ttype, [], params)
 
+    def _convert_timing(self, timing):
+        k = timing.bound()
+        if isinstance(k, int):
+            c = pytamer.tamer_expr_make_integer_constant(self.env, k)
+        elif isinstance(k, float):
+            k = Fraction(k)
+            c = pytamer.tamer_expr_make_rational_constant(self.env, k.numerator, k.denominator)
+        elif isinstance(k, Fraction):
+            c = pytamer.tamer_expr_make_rational_constant(self.env, k.numerator, k.denominator)
+        else:
+            raise
+        if timing.is_from_start():
+            if k == 0:
+                return self.tamer_start
+            else:
+                s = pytamer.tamer_expr_make_start_anchor(self.env)
+                r = pytamer.tamer_expr_make_plus(self.env, s, c)
+                return pytamer.tamer_expr_make_point_interval(self.env, r)
+        elif timing.is_from_end():
+            if k == 0:
+                return self.tamer_end
+            else:
+                s = pytamer.tamer_expr_make_end_anchor(self.env)
+                r = pytamer.tamer_expr_make_minus(self.env, s, c)
+                return pytamer.tamer_expr_make_point_interval(self.env, r)
+        else:
+            return pytamer.tamer_expr_make_point_interval(self.env, c)
+
+    def _convert_interval(self, interval):
+        lower = pytamer.tamer_expr_get_child(self._convert_timing(interval.lower()), 0)
+        upper = pytamer.tamer_expr_get_child(self._convert_timing(interval.upper()), 0)
+        if interval.is_left_open() and interval.is_right_open():
+            return pytamer.tamer_expr_make_open_interval(self.env, lower, upper)
+        elif interval.is_left_open():
+            return pytamer.tamer_expr_make_left_open_interval(self.env, lower, upper)
+        elif interval.is_right_open():
+            return pytamer.tamer_expr_make_right_open_interval(self.env, lower, upper)
+        else:
+            return pytamer.tamer_expr_make_closed_interval(self.env, lower, upper)
+
+    def _convert_duration(self, duration):
+        d = pytamer.tamer_expr_make_duration_anchor(self.env)
+        lower = pytamer.tamer_expr_get_child(self._convert_timing(duration.lower()), 0)
+        upper = pytamer.tamer_expr_get_child(self._convert_timing(duration.upper()), 0)
+        if duration.lower() == duration.upper():
+            return pytamer.tamer_expr_make_equals(self.env, d, lower)
+        if duration.is_left_open():
+            l = pytamer.tamer_expr_make_gt(self.env, d, lower)
+        else:
+            l = pytamer.tamer_expr_make_ge(self.env, d, lower)
+        if duration.is_right_open():
+            u = pytamer.tamer_expr_make_lt(self.env, d, upper)
+        else:
+            u = pytamer.tamer_expr_make_le(self.env, d, upper)
+        return pytamer.tamer_expr_make_and(self.env, l, u)
+
     def _convert_action(self, action, fluents_map, user_types_map, instances_map):
         params = []
         params_map = {}
@@ -87,18 +145,44 @@ class SolverImpl(upf.Solver):
             params_map[p] = new_p
         expressions = []
         converter = Converter(self.env, fluents_map, instances_map, params_map)
-        for c in action.preconditions():
-            expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start,
-                                                               converter.convert(c))
+        if isinstance(action, upf.Action):
+            for c in action.preconditions():
+                expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start,
+                                                                   converter.convert(c))
+                expressions.append(expr)
+            for e in action.effects():
+                assert not e.is_conditional() and e.is_assignment()
+                ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(e.fluent()), converter.convert(e.value()))
+                expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start, ass)
+                expressions.append(expr)
+            expr = pytamer.tamer_expr_make_assign(self.env, pytamer.tamer_expr_make_duration_anchor(self.env),
+                                                  pytamer.tamer_expr_make_integer_constant(self.env, 1))
             expressions.append(expr)
-        for e in action.effects():
-            assert not e.is_conditional() and e.is_assignment()
-            ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(e.fluent()), converter.convert(e.value()))
-            expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_end, ass)
-            expressions.append(expr)
-        expr = pytamer.tamer_expr_make_assign(self.env, pytamer.tamer_expr_make_duration_anchor(self.env),
-                                              pytamer.tamer_expr_make_integer_constant(self.env, 1))
-        expressions.append(expr)
+        elif isinstance(action, upf.DurativeAction):
+            for t, l in action.conditions().items():
+                for c in l:
+                    expr = pytamer.tamer_expr_make_temporal_expression(self.env,
+                                                                       self._convert_timing(t),
+                                                                       converter.convert(c))
+                    expressions.append(expr)
+            for t, l in action.durative_conditions().items():
+                for c in l:
+                    expr = pytamer.tamer_expr_make_temporal_expression(self.env,
+                                                                       self._convert_interval(t),
+                                                                       converter.convert(c))
+                    expressions.append(expr)
+            for t, l in action.effects().items():
+                for e in l:
+                    assert not e.is_conditional() and e.is_assignment()
+                    ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(e.fluent()),
+                                                         converter.convert(e.value()))
+                    expr = pytamer.tamer_expr_make_temporal_expression(self.env,
+                                                                       self._convert_timing(t),
+                                                                       ass)
+                    expressions.append(expr)
+            expressions.append(self._convert_duration(action.duration()))
+        else:
+            raise
         return pytamer.tamer_action_new(self.env, action.name(), [], params, expressions)
 
     def _convert_problem(self, problem):
@@ -149,8 +233,11 @@ class SolverImpl(upf.Solver):
             for obj in problem.objects(ut):
                 objects[obj.name()] = obj
         actions = []
+        is_temporal = False
         for s in pytamer.tamer_ttplan_get_steps(ttplan):
             taction = pytamer.tamer_ttplan_step_get_action(s)
+            start = Fraction(pytamer.tamer_ttplan_step_get_start_time(s))
+            d = Fraction(pytamer.tamer_ttplan_step_get_duration(s))
             name = pytamer.tamer_action_get_name(taction)
             action = problem.action(name)
             params = []
@@ -169,10 +256,17 @@ class SolverImpl(upf.Solver):
                 else:
                     raise
                 params.append(new_p)
-            actions.append(upf.ActionInstance(action, tuple(params)))
-        return upf.SequentialPlan(actions)
+            if isinstance(action, upf.DurativeAction):
+                is_temporal = True
+                actions.append((start, upf.ActionInstance(action, tuple(params)), d))
+            else:
+                actions.append((start, upf.ActionInstance(action, tuple(params)), 0))
+        if is_temporal:
+            return upf.TimeTriggeredPlan(actions)
+        else:
+            return upf.SequentialPlan([a[1] for a in actions])
 
-    def _solve(self, tproblem):
+    def _solve_classical_problem(self, tproblem):
         potplan = pytamer.tamer_do_tsimple_planning(tproblem)
         if pytamer.tamer_potplan_is_error(potplan) == 1:
             return None
@@ -180,8 +274,12 @@ class SolverImpl(upf.Solver):
         return ttplan
 
     def solve(self, problem):
+        assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
-        ttplan = self._solve(tproblem)
+        if problem.kind().has_continuous_time():
+            ttplan = pytamer.tamer_do_ftp_planning(tproblem)
+        else:
+            ttplan = self._solve_classical_problem(tproblem)
         return self._to_upf_plan(problem, ttplan)
 
     def _convert_plan(self, tproblem, plan):
@@ -221,6 +319,7 @@ class SolverImpl(upf.Solver):
         return ttplan
 
     def validate(self, problem, plan):
+        assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
         return pytamer.tamer_ttplan_validate(tproblem, tplan)
