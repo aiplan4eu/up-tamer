@@ -221,6 +221,24 @@ class SolverImpl(upf.Solver):
             expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_end,
                                                                converter.convert(g))
             expressions.append(expr)
+        for t, l in problem.timed_effects().items():
+            t = self._convert_timing(t)
+            for e in l:
+                expr = pytamer.tamer_expr_make_temporal_expression(self.env, t,
+                                                                   converter.convert(e))
+                expressions.append(expr)
+        for t, l in problem.timed_goals().items():
+            t = self._convert_timing(t)
+            for g in l:
+                expr = pytamer.tamer_expr_make_temporal_expression(self.env, t,
+                                                                   converter.convert(g))
+                expressions.append(expr)
+        for t, l in problem.mantain_goals().items():
+            t = self._convert_interval(t)
+            for g in l:
+                expr = pytamer.tamer_expr_make_temporal_expression(self.env, t,
+                                                                   converter.convert(g))
+                expressions.append(expr)
 
         return pytamer.tamer_problem_new(self.env, actions, fluents, [], instances, user_types, expressions)
 
@@ -233,7 +251,6 @@ class SolverImpl(upf.Solver):
             for obj in problem.objects(ut):
                 objects[obj.name()] = obj
         actions = []
-        is_temporal = False
         for s in pytamer.tamer_ttplan_get_steps(ttplan):
             taction = pytamer.tamer_ttplan_step_get_action(s)
             start = Fraction(pytamer.tamer_ttplan_step_get_start_time(s))
@@ -256,12 +273,8 @@ class SolverImpl(upf.Solver):
                 else:
                     raise
                 params.append(new_p)
-            if isinstance(action, upf.DurativeAction):
-                is_temporal = True
-                actions.append((start, upf.ActionInstance(action, tuple(params)), d))
-            else:
-                actions.append((start, upf.ActionInstance(action, tuple(params)), 0))
-        if is_temporal:
+            actions.append((start, upf.ActionInstance(action, tuple(params)), d))
+        if problem.kind().has_continuous_time():
             return upf.TimeTriggeredPlan(actions)
         else:
             return upf.SequentialPlan([a[1] for a in actions])
