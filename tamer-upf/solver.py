@@ -224,8 +224,10 @@ class SolverImpl(upf.Solver):
         for t, l in problem.timed_effects().items():
             t = self._convert_timing(t)
             for e in l:
-                expr = pytamer.tamer_expr_make_temporal_expression(self.env, t,
-                                                                   converter.convert(e))
+                assert not e.is_conditional() and e.is_assignment()
+                ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(e.fluent()),
+                                                     converter.convert(e.value()))
+                expr = pytamer.tamer_expr_make_temporal_expression(self.env, t, ass)
                 expressions.append(expr)
         for t, l in problem.timed_goals().items():
             t = self._convert_timing(t)
