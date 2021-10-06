@@ -65,11 +65,7 @@ class Converter(DagWalker):
 
     def walk_fluent_exp(self, expression, args):
         fluent = expression.fluent()
-        ref = pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent])
-        if len(args) == 0:
-            return ref
-        else:
-            return pytamer.tamer_expr_make_functional_apply(self._env, ref, args)
+        return pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent], args)
 
     def walk_param_exp(self, expression, args):
         assert len(args) == 0
