@@ -16,13 +16,14 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+TAMERCOMMIT="ed3e21b306a37ac0045c2310ad1e26021f40865f"
 
 cd ${DIR}/
 
 rm -rf Tamer Tamer.zip
-wget https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer.zip &> /dev/null
-unzip Tamer.zip &> /dev/null
-rm Tamer.zip
+wget https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer-${TAMERCOMMIT}.zip &> /dev/null
+unzip Tamer-${TAMERCOMMIT}.zip &> /dev/null
+rm Tamer-${TAMERCOMMIT}.zip
 
 python3 ${DIR}/install.py
 
