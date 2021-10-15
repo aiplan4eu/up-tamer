@@ -13,14 +13,16 @@
 # limitations under the License.
 
 import upf
-import pytamer
+import pytamer # type: ignore
 from upf.problem_kind import ProblemKind
 from upf_tamer.converter import Converter
 from fractions import Fraction
+from typing import Optional, Dict
 
 
 class SolverImpl(upf.Solver):
-    def __init__(self, weight=None, heuristic=None, **options):
+    def __init__(self, weight: Optional[float] = None,
+                 heuristic: Optional[str] = None, **options):
         self.env = pytamer.tamer_env_new()
         if not weight is None:
             pytamer.tamer_env_set_float_option(self.env, 'weight', weight)
@@ -35,14 +37,15 @@ class SolverImpl(upf.Solver):
             pytamer.tamer_expr_make_point_interval(self.env,
                                                    pytamer.tamer_expr_make_end_anchor(self.env))
 
-    def _convert_type(self, typename, user_types_map):
+    def _convert_type(self, typename: 'upf.types.Type',
+                      user_types_map: Dict['upf.types.Type', pytamer.tamer_type]) -> pytamer.tamer_type:
         if typename.is_bool_type():
             ttype = self.bool_type
         elif typename.is_user_type():
             ttype = user_types_map[typename]
         elif typename.is_int_type():
-            lb = typename.lower_bound()
-            ub = typename.upper_bound()
+            lb = typename.lower_bound() # type: ignore
+            ub = typename.upper_bound() # type: ignore
             if lb is None and ub is None:
                 ttype = pytamer.tamer_integer_type(self.env)
             elif lb is None:
@@ -52,8 +55,8 @@ class SolverImpl(upf.Solver):
             else:
                 ttype = pytamer.tamer_integer_type_lub(self.env, lb, ub)
         elif typename.is_real_type():
-            lb = typename.lower_bound()
-            ub = typename.upper_bound()
+            lb = typename.lower_bound() # type: ignore
+            ub = typename.upper_bound() # type: ignore
             if lb is None and ub is None:
                 ttype = pytamer.tamer_rational_type(self.env)
             elif lb is None:
@@ -66,7 +69,9 @@ class SolverImpl(upf.Solver):
             raise
         return ttype
 
-    def _convert_fluent(self, fluent, user_types_map):
+    def _convert_fluent(self, fluent: 'upf.Fluent',
+                        user_types_map: Dict['upf.types.Type',
+                                             pytamer.tamer_fluent]) -> pytamer.tamer_fluent:
         name = fluent.name()
         typename = fluent.type()
         ttype = self._convert_type(typename, user_types_map)
@@ -79,7 +84,7 @@ class SolverImpl(upf.Solver):
             params.append(p)
         return pytamer.tamer_fluent_new(self.env, name, ttype, [], params)
 
-    def _convert_timing(self, timing):
+    def _convert_timing(self, timing: 'upf.temporal.Timing') -> pytamer.tamer_expr:
         k = timing.bound()
         if isinstance(k, int):
             c = pytamer.tamer_expr_make_integer_constant(self.env, k)
@@ -107,7 +112,7 @@ class SolverImpl(upf.Solver):
         else:
             return pytamer.tamer_expr_make_point_interval(self.env, c)
 
-    def _convert_interval(self, interval):
+    def _convert_interval(self, interval: 'upf.temporal.Interval') -> pytamer.tamer_expr:
         lower = pytamer.tamer_expr_get_child(self._convert_timing(interval.lower()), 0)
         upper = pytamer.tamer_expr_get_child(self._convert_timing(interval.upper()), 0)
         if interval.is_left_open() and interval.is_right_open():
@@ -119,7 +124,7 @@ class SolverImpl(upf.Solver):
         else:
             return pytamer.tamer_expr_make_closed_interval(self.env, lower, upper)
 
-    def _convert_duration(self, duration):
+    def _convert_duration(self, duration: 'upf.temporal.Interval') -> pytamer.tamer_expr:
         d = pytamer.tamer_expr_make_duration_anchor(self.env)
         lower = pytamer.tamer_expr_get_child(self._convert_timing(duration.lower()), 0)
         upper = pytamer.tamer_expr_get_child(self._convert_timing(duration.upper()), 0)
@@ -135,7 +140,10 @@ class SolverImpl(upf.Solver):
             u = pytamer.tamer_expr_make_le(self.env, d, upper)
         return pytamer.tamer_expr_make_and(self.env, l, u)
 
-    def _convert_action(self, action, fluents_map, user_types_map, instances_map):
+    def _convert_action(self, action: 'upf.ActionInterface',
+                        fluents_map: Dict['upf.Fluent', pytamer.tamer_fluent],
+                        user_types_map: Dict['upf.types.Type', pytamer.tamer_type],
+                        instances_map: Dict['upf.Object', pytamer.tamer_instance]) -> pytamer.tamer_action:
         params = []
         params_map = {}
         for p in action.parameters():
@@ -185,13 +193,14 @@ class SolverImpl(upf.Solver):
             raise
         return pytamer.tamer_action_new(self.env, action.name(), [], params, expressions)
 
-    def _convert_problem(self, problem):
+    def _convert_problem(self, problem: 'upf.Problem') -> pytamer.tamer_problem:
         user_types = []
         user_types_map = {}
         instances = []
         instances_map = {}
         for ut in problem.user_types().values():
-            new_ut = pytamer.tamer_user_type_new(self.env, ut.name())
+            name = ut.name() # type: ignore
+            new_ut = pytamer.tamer_user_type_new(self.env, name)
             user_types.append(new_ut)
             user_types_map[ut] = new_ut
             for obj in problem.objects(ut):
@@ -213,17 +222,17 @@ class SolverImpl(upf.Solver):
 
         expressions = []
         converter = Converter(self.env, fluents_map, instances_map)
-        for f, v in problem.initial_values().items():
-            ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(f), converter.convert(v))
+        for k, v in problem.initial_values().items():
+            ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(k), converter.convert(v))
             expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start, ass)
             expressions.append(expr)
         for g in problem.goals():
             expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_end,
                                                                converter.convert(g))
             expressions.append(expr)
-        for t, l in problem.timed_effects().items():
+        for t, le in problem.timed_effects().items():
             t = self._convert_timing(t)
-            for e in l:
+            for e in le:
                 assert not e.is_conditional() and e.is_assignment()
                 ass = pytamer.tamer_expr_make_assign(self.env, converter.convert(e.fluent()),
                                                      converter.convert(e.value()))
@@ -235,16 +244,17 @@ class SolverImpl(upf.Solver):
                 expr = pytamer.tamer_expr_make_temporal_expression(self.env, t,
                                                                    converter.convert(g))
                 expressions.append(expr)
-        for t, l in problem.mantain_goals().items():
-            t = self._convert_interval(t)
+        for i, l in problem.mantain_goals().items():
+            i = self._convert_interval(i)
             for g in l:
-                expr = pytamer.tamer_expr_make_temporal_expression(self.env, t,
+                expr = pytamer.tamer_expr_make_temporal_expression(self.env, i,
                                                                    converter.convert(g))
                 expressions.append(expr)
 
         return pytamer.tamer_problem_new(self.env, actions, fluents, [], instances, user_types, expressions)
 
-    def _to_upf_plan(self, problem, ttplan):
+    def _to_upf_plan(self, problem: 'upf.Problem',
+                     ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['upf.Plan']:
         if ttplan is None:
             return None
         expr_manager = problem.env.expression_manager
@@ -271,33 +281,33 @@ class SolverImpl(upf.Solver):
                     new_p = expr_manager.Int(i)
                 elif pytamer.tamer_expr_is_rational_constant(self.env, p) == 1:
                     n, d = pytamer.tamer_expr_get_rational_constant(self.env, p)
-                    new_p = expr_manager.Real(n, d)
+                    new_p = expr_manager.Real(Fraction(n, d))
                 else:
                     raise
                 params.append(new_p)
             actions.append((start, upf.ActionInstance(action, tuple(params)), d))
-        if problem.kind().has_continuous_time():
+        if problem.kind().has_continuous_time(): # type: ignore
             return upf.TimeTriggeredPlan(actions)
         else:
             return upf.SequentialPlan([a[1] for a in actions])
 
-    def _solve_classical_problem(self, tproblem):
+    def _solve_classical_problem(self, tproblem: pytamer.tamer_problem) -> Optional[pytamer.tamer_ttplan]:
         potplan = pytamer.tamer_do_tsimple_planning(tproblem)
         if pytamer.tamer_potplan_is_error(potplan) == 1:
             return None
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem):
+    def solve(self, problem: 'upf.Problem') -> Optional['upf.Plan']:
         assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
-        if problem.kind().has_continuous_time():
+        if problem.kind().has_continuous_time(): # type: ignore
             ttplan = pytamer.tamer_do_ftp_planning(tproblem)
         else:
             ttplan = self._solve_classical_problem(tproblem)
         return self._to_upf_plan(problem, ttplan)
 
-    def _convert_plan(self, tproblem, plan):
+    def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'upf.Plan') -> pytamer.tamer_ttplan:
         assert isinstance(plan, upf.SequentialPlan)
         actions_map = {}
         for a in pytamer.tamer_problem_get_actions(tproblem):
@@ -322,8 +332,8 @@ class SolverImpl(upf.Solver):
                     params.append(pytamer.tamer_expr_make_integer_constant(self.env, p.constant_value()))
                 elif p.is_real_constant():
                     f = p.constant_value()
-                    n = numerator(f)
-                    d = denominator(f)
+                    n = f.numerator
+                    d = f.denominator
                     params.append(pytamer.tamer_expr_make_rational_constant(self.env, n, d))
                 else:
                     raise
@@ -333,30 +343,31 @@ class SolverImpl(upf.Solver):
             start += 2
         return ttplan
 
-    def validate(self, problem, plan):
+    def validate(self, problem: 'upf.Problem', plan: 'upf.Plan') -> bool:
         assert self.supports(problem.kind())
+        assert isinstance(plan, upf.SequentialPlan)
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
-        return pytamer.tamer_ttplan_validate(tproblem, tplan)
+        return pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
 
     @staticmethod
-    def supports(problem_kind):
+    def supports(problem_kind: 'ProblemKind') -> bool:
         supported_kind = ProblemKind()
-        supported_kind.set_time('CONTINUOUS_TIME')
-        supported_kind.set_numbers('DISCRETE_NUMBERS')
-        supported_kind.set_numbers('CONTINUOUS_NUMBERS')
-        supported_kind.set_typing('FLAT_TYPING')
-        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS')
-        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS')
-        supported_kind.set_conditions_kind('EQUALITY')
+        supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
+        supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
+        supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
+        supported_kind.set_typing('FLAT_TYPING') # type: ignore
+        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
+        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
+        supported_kind.set_conditions_kind('EQUALITY') # type: ignore
         return problem_kind.features().issubset(supported_kind.features())
 
     @staticmethod
-    def is_oneshot_planner():
+    def is_oneshot_planner() -> bool:
         return True
 
     @staticmethod
-    def is_plan_validator():
+    def is_plan_validator() -> bool:
         return True
 
     def destroy(self):

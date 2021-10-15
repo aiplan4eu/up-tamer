@@ -28,5 +28,5 @@ if __name__ == '__main__':
     if os.path.exists(os.path.join(bindings_dir, 'upf_tamer')):
         shutil.rmtree(os.path.join(bindings_dir, 'upf_tamer'))
 
-    shutil.copytree(os.path.join(dir_path, 'tamer-upf'), os.path.join(bindings_dir, 'upf_tamer'))
+    shutil.copytree(os.path.join(dir_path, 'upf_tamer'), os.path.join(bindings_dir, 'upf_tamer'))
     print('upf_tamer installed successfully!')

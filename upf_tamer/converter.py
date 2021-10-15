@@ -13,23 +13,30 @@
 # limitations under the License.
 #
 
+import upf
+from upf.fnode import FNode
 from upf.walkers.dag import DagWalker
-import pytamer
+import pytamer # type: ignore
+from typing import Dict, List
 
 
 class Converter(DagWalker):
-    def __init__(self, env, fluents={}, instances={}, parameters={}):
+    def __init__(self, env: pytamer.tamer_env,
+                 fluents: Dict['upf.Fluent', pytamer.tamer_fluent] = {},
+                 instances: Dict['upf.Object', pytamer.tamer_instance] = {},
+                 parameters: Dict['upf.ActionParameter', pytamer.tamer_param]={}):
         DagWalker.__init__(self)
         self._env = env
         self._fluents = fluents
         self._instances = instances
         self._parameters = parameters
 
-    def convert(self, expression):
+    def convert(self, expression: 'FNode') -> pytamer.tamer_expr:
         """Converts the given expression."""
         return self.walk(expression)
 
-    def walk_and(self, expression, args):
+    def walk_and(self, expression: 'FNode',
+                 args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         if len(args) == 0:
             return pytamer.tamer_expr_make_true(self._env)
         elif len(args) == 1:
@@ -40,7 +47,8 @@ class Converter(DagWalker):
                 res = pytamer.tamer_expr_make_and(self._env, res, args[i])
             return res
 
-    def walk_or(self, expression, args):
+    def walk_or(self, expression: 'FNode',
+                args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         if len(args) == 0:
             return pytamer.tamer_expr_make_true(self._env)
         elif len(args) == 1:
@@ -51,77 +59,89 @@ class Converter(DagWalker):
                 res = pytamer.tamer_expr_make_or(self._env, res, args[i])
             return res
 
-    def walk_not(self, expression, args):
+    def walk_not(self, expression: 'FNode',
+                 args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 1
         return pytamer.tamer_expr_make_not(self._env, args[0])
 
-    def walk_implies(self, expression, args):
+    def walk_implies(self, expression: 'FNode',
+                     args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_implies(self._env, args[0], args[1])
 
-    def walk_iff(self, expression, args):
+    def walk_iff(self, expression: 'FNode',
+                 args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_iff(self._env, args[0], args[1])
 
-    def walk_fluent_exp(self, expression, args):
+    def walk_fluent_exp(self, expression: 'FNode',
+                        args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         fluent = expression.fluent()
-        ref = pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent])
-        if len(args) == 0:
-            return ref
-        else:
-            return pytamer.tamer_expr_make_functional_apply(self._env, ref, args)
+        return pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent], args)
 
-    def walk_param_exp(self, expression, args):
+    def walk_param_exp(self, expression: 'FNode',
+                       args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 0
         p = expression.parameter()
         return pytamer.tamer_expr_make_parameter_reference(self._env, self._parameters[p])
 
-    def walk_object_exp(self, expression, args):
+    def walk_object_exp(self, expression: 'FNode',
+                        args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 0
         o = expression.object()
         return pytamer.tamer_expr_make_instance_reference(self._env, self._instances[o])
 
-    def walk_bool_constant(self, expression, args):
+    def walk_bool_constant(self, expression: 'FNode',
+                           args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 0
         if expression.is_true():
             return pytamer.tamer_expr_make_true(self._env)
         else:
             return pytamer.tamer_expr_make_false(self._env)
 
-    def walk_real_constant(self, expression, args):
+    def walk_real_constant(self, expression: 'FNode',
+                           args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 0
         n = expression.constant_value().numerator
         d = expression.constant_value().denominator
         return pytamer.tamer_expr_make_rational_constant(self._env, n, d)
 
-    def walk_int_constant(self, expression, args):
+    def walk_int_constant(self, expression: 'FNode',
+                          args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 0
         return pytamer.tamer_expr_make_integer_constant(self._env, expression.constant_value())
 
-    def walk_plus(self, expression, args):
+    def walk_plus(self, expression: 'FNode',
+                  args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_plus(self._env, args[0], args[1])
 
-    def walk_minus(self, expression, args):
+    def walk_minus(self, expression: 'FNode',
+                   args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_minus(self._env, args[0], args[1])
 
-    def walk_times(self, expression, args):
+    def walk_times(self, expression: 'FNode',
+                   args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_times(self._env, args[0], args[1])
 
-    def walk_div(self, expression, args):
+    def walk_div(self, expression: 'FNode',
+                 args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_div(self._env, args[0], args[1])
 
-    def walk_le(self, expression, args):
+    def walk_le(self, expression: 'FNode',
+                args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_le(self._env, args[0], args[1])
 
-    def walk_lt(self, expression, args):
+    def walk_lt(self, expression: 'FNode',
+                args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_lt(self._env, args[0], args[1])
 
-    def walk_equals(self, expression, args):
+    def walk_equals(self, expression: 'FNode',
+                    args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
         return pytamer.tamer_expr_make_equals(self._env, args[0], args[1])
