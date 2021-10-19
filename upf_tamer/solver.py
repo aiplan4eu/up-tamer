@@ -244,7 +244,7 @@ class SolverImpl(upf.Solver):
                 expr = pytamer.tamer_expr_make_temporal_expression(self.env, t,
                                                                    converter.convert(g))
                 expressions.append(expr)
-        for i, l in problem.mantain_goals().items():
+        for i, l in problem.maintain_goals().items():
             i = self._convert_interval(i)
             for g in l:
                 expr = pytamer.tamer_expr_make_temporal_expression(self.env, i,
@@ -357,7 +357,7 @@ class SolverImpl(upf.Solver):
         supported_kind.set_time('ICE') # type: ignore
         supported_kind.set_time('TIMED_EFFECT') # type: ignore
         supported_kind.set_time('TIMED_GOALS') # type: ignore
-        supported_kind.set_time('MANTAIN_GOALS') # type: ignore
+        supported_kind.set_time('MAINTAIN_GOALS') # type: ignore
         supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
         supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
