@@ -353,17 +353,17 @@ class SolverImpl(upf.Solver):
     @staticmethod
     def supports(problem_kind: 'ProblemKind') -> bool:
         supported_kind = ProblemKind()
-        supported_kind.set_time('CONTINUOUS_TIME')
-        supported_kind.set_time('ICE')
-        supported_kind.set_time('TIMED_EFFECT')
-        supported_kind.set_time('TIMED_GOALS')
-        supported_kind.set_time('MANTAIN_GOALS')
-        supported_kind.set_numbers('DISCRETE_NUMBERS')
-        supported_kind.set_numbers('CONTINUOUS_NUMBERS')
-        supported_kind.set_typing('FLAT_TYPING')
-        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS')
-        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS')
-        supported_kind.set_conditions_kind('EQUALITY')
+        supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
+        supported_kind.set_time('ICE') # type: ignore
+        supported_kind.set_time('TIMED_EFFECT') # type: ignore
+        supported_kind.set_time('TIMED_GOALS') # type: ignore
+        supported_kind.set_time('MANTAIN_GOALS') # type: ignore
+        supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
+        supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
+        supported_kind.set_typing('FLAT_TYPING') # type: ignore
+        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
+        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
+        supported_kind.set_conditions_kind('EQUALITY') # type: ignore
         return problem_kind.features().issubset(supported_kind.features())
 
     @staticmethod
