@@ -124,10 +124,11 @@ class SolverImpl(upf.Solver):
         else:
             return pytamer.tamer_expr_make_closed_interval(self.env, lower, upper)
 
-    def _convert_duration(self, duration: 'upf.temporal.Interval') -> pytamer.tamer_expr:
+    def _convert_duration(self, converter: Converter,
+                          duration: 'upf.temporal.IntervalDuration') -> pytamer.tamer_expr:
         d = pytamer.tamer_expr_make_duration_anchor(self.env)
-        lower = pytamer.tamer_expr_get_child(self._convert_timing(duration.lower()), 0)
-        upper = pytamer.tamer_expr_get_child(self._convert_timing(duration.upper()), 0)
+        lower = converter.convert(duration.lower())
+        upper = converter.convert(duration.upper())
         if duration.lower() == duration.upper():
             return pytamer.tamer_expr_make_equals(self.env, d, lower)
         if duration.is_left_open():
@@ -188,7 +189,7 @@ class SolverImpl(upf.Solver):
                                                                        self._convert_timing(t),
                                                                        ass)
                     expressions.append(expr)
-            expressions.append(self._convert_duration(action.duration()))
+            expressions.append(self._convert_duration(converter, action.duration()))
         else:
             raise
         return pytamer.tamer_action_new(self.env, action.name(), [], params, expressions)
