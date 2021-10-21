@@ -141,7 +141,7 @@ class SolverImpl(upf.Solver):
             u = pytamer.tamer_expr_make_le(self.env, d, upper)
         return pytamer.tamer_expr_make_and(self.env, l, u)
 
-    def _convert_action(self, action: 'upf.ActionInterface',
+    def _convert_action(self, action: 'upf.Action',
                         fluents_map: Dict['upf.Fluent', pytamer.tamer_fluent],
                         user_types_map: Dict['upf.types.Type', pytamer.tamer_type],
                         instances_map: Dict['upf.Object', pytamer.tamer_instance]) -> pytamer.tamer_action:
@@ -154,7 +154,7 @@ class SolverImpl(upf.Solver):
             params_map[p] = new_p
         expressions = []
         converter = Converter(self.env, fluents_map, instances_map, params_map)
-        if isinstance(action, upf.Action):
+        if isinstance(action, upf.InstantaneousAction):
             for c in action.preconditions():
                 expr = pytamer.tamer_expr_make_temporal_expression(self.env, self.tamer_start,
                                                                    converter.convert(c))
