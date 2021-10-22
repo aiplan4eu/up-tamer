@@ -355,7 +355,7 @@ class SolverImpl(upf.Solver):
     def supports(problem_kind: 'ProblemKind') -> bool:
         supported_kind = ProblemKind()
         supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
-        supported_kind.set_time('ICE') # type: ignore
+        supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS') # type: ignore
         supported_kind.set_time('TIMED_EFFECT') # type: ignore
         supported_kind.set_time('TIMED_GOALS') # type: ignore
         supported_kind.set_time('MAINTAIN_GOALS') # type: ignore
