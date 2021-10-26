@@ -369,6 +369,7 @@ class SolverImpl(upf.Solver):
         supported_kind.set_time('TIMED_EFFECT') # type: ignore
         supported_kind.set_time('TIMED_GOALS') # type: ignore
         supported_kind.set_time('MAINTAIN_GOALS') # type: ignore
+        supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
         supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
         supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
