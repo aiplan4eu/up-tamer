@@ -17,7 +17,7 @@ import pytamer # type: ignore
 from upf.problem_kind import ProblemKind
 from upf_tamer.converter import Converter
 from fractions import Fraction
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Tuple
 
 
 class SolverImpl(upf.Solver):
@@ -319,7 +319,6 @@ class SolverImpl(upf.Solver):
         return self._to_upf_plan(problem, ttplan)
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'upf.Plan') -> pytamer.tamer_ttplan:
-        assert isinstance(plan, upf.SequentialPlan)
         actions_map = {}
         for a in pytamer.tamer_problem_get_actions(tproblem):
             actions_map[pytamer.tamer_action_get_name(a)] = a
@@ -327,8 +326,14 @@ class SolverImpl(upf.Solver):
         for i in pytamer.tamer_problem_get_instances(tproblem):
             instances_map[pytamer.tamer_instance_get_name(i)] = i
         ttplan = pytamer.tamer_ttplan_new(self._env)
-        start = 0
-        for ai in plan.actions():
+        steps: List[Tuple[Fraction, 'upf.ActionInstance', Optional[Fraction]]] = []
+        if isinstance(plan, upf.SequentialPlan):
+            steps = [(Fraction(i*2), a, Fraction(1)) for i, a in enumerate(plan.actions())]
+        elif isinstance(plan, upf.TimeTriggeredPlan):
+            steps = plan.actions()
+        else:
+            raise
+        for start, ai, duration in steps:
             action = actions_map[ai.action().name()]
             params = []
             for p in ai.actual_parameters():
@@ -348,15 +353,13 @@ class SolverImpl(upf.Solver):
                     params.append(pytamer.tamer_expr_make_rational_constant(self._env, n, d))
                 else:
                     raise
-            step = pytamer.tamer_ttplan_step_new(str(start), action, params, '1', \
+            step = pytamer.tamer_ttplan_step_new(str(start), action, params, str(duration), \
                                                  pytamer.tamer_expr_make_true(self._env))
             pytamer.tamer_ttplan_add_step(ttplan, step)
-            start += 2
         return ttplan
 
     def validate(self, problem: 'upf.Problem', plan: 'upf.Plan') -> bool:
         assert self.supports(problem.kind())
-        assert isinstance(plan, upf.SequentialPlan)
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
         return pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
