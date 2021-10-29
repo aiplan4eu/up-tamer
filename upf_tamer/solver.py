@@ -14,13 +14,13 @@
 
 import upf
 import pytamer # type: ignore
-from upf.problem_kind import ProblemKind
+from upf.model.problem_kind import ProblemKind
 from upf_tamer.converter import Converter
 from fractions import Fraction
 from typing import Optional, Dict, List, Tuple
 
 
-class SolverImpl(upf.Solver):
+class SolverImpl(upf.solver.Solver):
     def __init__(self, weight: Optional[float] = None,
                  heuristic: Optional[str] = None, **options):
         self._env = pytamer.tamer_env_new()
@@ -41,8 +41,8 @@ class SolverImpl(upf.Solver):
     def name() -> str:
         return 'Tamer'
 
-    def _convert_type(self, typename: 'upf.types.Type',
-                      user_types_map: Dict['upf.types.Type', pytamer.tamer_type]) -> pytamer.tamer_type:
+    def _convert_type(self, typename: 'upf.model.types.Type',
+                      user_types_map: Dict['upf.model.types.Type', pytamer.tamer_type]) -> pytamer.tamer_type:
         if typename.is_bool_type():
             ttype = self._bool_type
         elif typename.is_user_type():
@@ -74,7 +74,7 @@ class SolverImpl(upf.Solver):
         return ttype
 
     def _convert_fluent(self, fluent: 'upf.Fluent',
-                        user_types_map: Dict['upf.types.Type',
+                        user_types_map: Dict['upf.model.types.Type',
                                              pytamer.tamer_fluent]) -> pytamer.tamer_fluent:
         name = fluent.name()
         typename = fluent.type()
@@ -88,7 +88,7 @@ class SolverImpl(upf.Solver):
             params.append(p)
         return pytamer.tamer_fluent_new(self._env, name, ttype, [], params)
 
-    def _convert_timing(self, timing: 'upf.timing.Timing') -> pytamer.tamer_expr:
+    def _convert_timing(self, timing: 'upf.model.timing.Timing') -> pytamer.tamer_expr:
         k = timing.bound()
         if isinstance(k, int):
             c = pytamer.tamer_expr_make_integer_constant(self._env, k)
@@ -116,7 +116,7 @@ class SolverImpl(upf.Solver):
         else:
             return pytamer.tamer_expr_make_point_interval(self._env, c)
 
-    def _convert_interval(self, interval: 'upf.timing.Interval') -> pytamer.tamer_expr:
+    def _convert_interval(self, interval: 'upf.model.timing.Interval') -> pytamer.tamer_expr:
         lower = pytamer.tamer_expr_get_child(self._convert_timing(interval.lower()), 0)
         upper = pytamer.tamer_expr_get_child(self._convert_timing(interval.upper()), 0)
         if interval.is_left_open() and interval.is_right_open():
@@ -129,7 +129,7 @@ class SolverImpl(upf.Solver):
             return pytamer.tamer_expr_make_closed_interval(self._env, lower, upper)
 
     def _convert_duration(self, converter: Converter,
-                          duration: 'upf.timing.IntervalDuration') -> pytamer.tamer_expr:
+                          duration: 'upf.model.timing.IntervalDuration') -> pytamer.tamer_expr:
         d = pytamer.tamer_expr_make_duration_anchor(self._env)
         lower = converter.convert(duration.lower())
         upper = converter.convert(duration.upper())
@@ -147,7 +147,7 @@ class SolverImpl(upf.Solver):
 
     def _convert_action(self, action: 'upf.Action',
                         fluents_map: Dict['upf.Fluent', pytamer.tamer_fluent],
-                        user_types_map: Dict['upf.types.Type', pytamer.tamer_type],
+                        user_types_map: Dict['upf.model.types.Type', pytamer.tamer_type],
                         instances_map: Dict['upf.Object', pytamer.tamer_instance]) -> pytamer.tamer_action:
         params = []
         params_map = {}

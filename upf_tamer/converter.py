@@ -14,7 +14,7 @@
 #
 
 import upf
-from upf.fnode import FNode
+from upf.model.fnode import FNode
 from upf.walkers.dag import DagWalker
 import pytamer # type: ignore
 from typing import Dict, List
