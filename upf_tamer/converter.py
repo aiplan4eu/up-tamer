@@ -22,9 +22,9 @@ from typing import Dict, List
 
 class Converter(DagWalker):
     def __init__(self, env: pytamer.tamer_env,
-                 fluents: Dict['upf.Fluent', pytamer.tamer_fluent] = {},
-                 instances: Dict['upf.Object', pytamer.tamer_instance] = {},
-                 parameters: Dict['upf.ActionParameter', pytamer.tamer_param]={}):
+                 fluents: Dict['upf.model.Fluent', pytamer.tamer_fluent] = {},
+                 instances: Dict['upf.model.Object', pytamer.tamer_instance] = {},
+                 parameters: Dict['upf.model.ActionParameter', pytamer.tamer_param]={}):
         DagWalker.__init__(self)
         self._env = env
         self._fluents = fluents

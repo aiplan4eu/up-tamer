@@ -259,7 +259,7 @@ class SolverImpl(upf.solver.Solver):
         return pytamer.tamer_problem_new(self._env, actions, fluents, [], instances, user_types, expressions)
 
     def _to_upf_plan(self, problem: 'upf.model.Problem',
-                     ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['upf.model.Plan']:
+                     ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['upf.plan.Plan']:
         if ttplan is None:
             return None
         expr_manager = problem.env.expression_manager
@@ -305,7 +305,7 @@ class SolverImpl(upf.solver.Solver):
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem: 'upf.Problem') -> Optional['upf.Plan']:
+    def solve(self, problem: 'upf.model.Problem') -> Optional['upf.plan.Plan']:
         assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
@@ -318,7 +318,7 @@ class SolverImpl(upf.solver.Solver):
             ttplan = self._solve_classical_problem(tproblem)
         return self._to_upf_plan(problem, ttplan)
 
-    def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'upf.Plan') -> pytamer.tamer_ttplan:
+    def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'upf.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
         for a in pytamer.tamer_problem_get_actions(tproblem):
             actions_map[pytamer.tamer_action_get_name(a)] = a
@@ -326,7 +326,7 @@ class SolverImpl(upf.solver.Solver):
         for i in pytamer.tamer_problem_get_instances(tproblem):
             instances_map[pytamer.tamer_instance_get_name(i)] = i
         ttplan = pytamer.tamer_ttplan_new(self._env)
-        steps: List[Tuple[Fraction, 'upf.model.ActionInstance', Optional[Fraction]]] = []
+        steps: List[Tuple[Fraction, 'upf.plan.ActionInstance', Optional[Fraction]]] = []
         if isinstance(plan, upf.plan.SequentialPlan):
             steps = [(Fraction(i*2), a, Fraction(1)) for i, a in enumerate(plan.actions())]
         elif isinstance(plan, upf.plan.TimeTriggeredPlan):
@@ -358,7 +358,7 @@ class SolverImpl(upf.solver.Solver):
             pytamer.tamer_ttplan_add_step(ttplan, step)
         return ttplan
 
-    def validate(self, problem: 'upf.Problem', plan: 'upf.Plan') -> bool:
+    def validate(self, problem: 'upf.model.Problem', plan: 'upf.plan.Plan') -> bool:
         assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
