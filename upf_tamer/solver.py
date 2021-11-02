@@ -73,7 +73,7 @@ class SolverImpl(upf.solver.Solver):
             assert False
         return ttype
 
-    def _convert_fluent(self, fluent: 'upf.Fluent',
+    def _convert_fluent(self, fluent: 'upf.model.Fluent',
                         user_types_map: Dict['upf.model.types.Type',
                                              pytamer.tamer_fluent]) -> pytamer.tamer_fluent:
         name = fluent.name()
@@ -145,10 +145,10 @@ class SolverImpl(upf.solver.Solver):
             u = pytamer.tamer_expr_make_le(self._env, d, upper)
         return pytamer.tamer_expr_make_and(self._env, l, u)
 
-    def _convert_action(self, action: 'upf.Action',
-                        fluents_map: Dict['upf.Fluent', pytamer.tamer_fluent],
+    def _convert_action(self, action: 'upf.model.Action',
+                        fluents_map: Dict['upf.model.Fluent', pytamer.tamer_fluent],
                         user_types_map: Dict['upf.model.types.Type', pytamer.tamer_type],
-                        instances_map: Dict['upf.Object', pytamer.tamer_instance]) -> pytamer.tamer_action:
+                        instances_map: Dict['upf.model.Object', pytamer.tamer_instance]) -> pytamer.tamer_action:
         params = []
         params_map = {}
         for p in action.parameters():
@@ -158,7 +158,7 @@ class SolverImpl(upf.solver.Solver):
             params_map[p] = new_p
         expressions = []
         converter = Converter(self._env, fluents_map, instances_map, params_map)
-        if isinstance(action, upf.InstantaneousAction):
+        if isinstance(action, upf.model.InstantaneousAction):
             for c in action.preconditions():
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start,
                                                                    converter.convert(c))
@@ -171,7 +171,7 @@ class SolverImpl(upf.solver.Solver):
             expr = pytamer.tamer_expr_make_assign(self._env, pytamer.tamer_expr_make_duration_anchor(self._env),
                                                   pytamer.tamer_expr_make_integer_constant(self._env, 1))
             expressions.append(expr)
-        elif isinstance(action, upf.DurativeAction):
+        elif isinstance(action, upf.model.DurativeAction):
             for t, l in action.conditions().items():
                 for c in l:
                     expr = pytamer.tamer_expr_make_temporal_expression(self._env,
@@ -198,7 +198,7 @@ class SolverImpl(upf.solver.Solver):
             raise
         return pytamer.tamer_action_new(self._env, action.name(), [], params, expressions)
 
-    def _convert_problem(self, problem: 'upf.Problem') -> pytamer.tamer_problem:
+    def _convert_problem(self, problem: 'upf.model.Problem') -> pytamer.tamer_problem:
         user_types = []
         user_types_map = {}
         instances = []
@@ -258,8 +258,8 @@ class SolverImpl(upf.solver.Solver):
 
         return pytamer.tamer_problem_new(self._env, actions, fluents, [], instances, user_types, expressions)
 
-    def _to_upf_plan(self, problem: 'upf.Problem',
-                     ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['upf.Plan']:
+    def _to_upf_plan(self, problem: 'upf.model.Problem',
+                     ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['upf.model.Plan']:
         if ttplan is None:
             return None
         expr_manager = problem.env.expression_manager
@@ -274,7 +274,7 @@ class SolverImpl(upf.solver.Solver):
             duration = None
             name = pytamer.tamer_action_get_name(taction)
             action = problem.action(name)
-            if isinstance(action, upf.DurativeAction):
+            if isinstance(action, upf.model.DurativeAction):
                 duration = Fraction(pytamer.tamer_ttplan_step_get_duration(s))
             params = []
             for p in pytamer.tamer_ttplan_step_get_parameters(s):
@@ -292,11 +292,11 @@ class SolverImpl(upf.solver.Solver):
                 else:
                     raise
                 params.append(new_p)
-            actions.append((start, upf.ActionInstance(action, tuple(params)), duration))
+            actions.append((start, upf.plan.ActionInstance(action, tuple(params)), duration))
         if problem.kind().has_continuous_time(): # type: ignore
-            return upf.TimeTriggeredPlan(actions)
+            return upf.plan.TimeTriggeredPlan(actions)
         else:
-            return upf.SequentialPlan([a[1] for a in actions])
+            return upf.plan.SequentialPlan([a[1] for a in actions])
 
     def _solve_classical_problem(self, tproblem: pytamer.tamer_problem) -> Optional[pytamer.tamer_ttplan]:
         potplan = pytamer.tamer_do_tsimple_planning(tproblem)
@@ -326,10 +326,10 @@ class SolverImpl(upf.solver.Solver):
         for i in pytamer.tamer_problem_get_instances(tproblem):
             instances_map[pytamer.tamer_instance_get_name(i)] = i
         ttplan = pytamer.tamer_ttplan_new(self._env)
-        steps: List[Tuple[Fraction, 'upf.ActionInstance', Optional[Fraction]]] = []
-        if isinstance(plan, upf.SequentialPlan):
+        steps: List[Tuple[Fraction, 'upf.model.ActionInstance', Optional[Fraction]]] = []
+        if isinstance(plan, upf.plan.SequentialPlan):
             steps = [(Fraction(i*2), a, Fraction(1)) for i, a in enumerate(plan.actions())]
-        elif isinstance(plan, upf.TimeTriggeredPlan):
+        elif isinstance(plan, upf.plan.TimeTriggeredPlan):
             steps = plan.actions()
         else:
             raise
