@@ -20,7 +20,7 @@ from fractions import Fraction
 from typing import Optional, Dict, List, Tuple
 
 
-class SolverImpl(upf.solver.Solver):
+class SolverImpl(upf.solvers.Solver):
     def __init__(self, weight: Optional[float] = None,
                  heuristic: Optional[str] = None, **options):
         self._env = pytamer.tamer_env_new()
