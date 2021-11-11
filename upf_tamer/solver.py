@@ -196,7 +196,7 @@ class SolverImpl(upf.solvers.Solver):
             expressions.append(self._convert_duration(converter, action.duration()))
         else:
             raise
-        return pytamer.tamer_action_new(self._env, action.name(), [], params, expressions)
+        return pytamer.tamer_action_new(self._env, action.name, [], params, expressions)
 
     def _convert_problem(self, problem: 'upf.model.Problem') -> pytamer.tamer_problem:
         user_types = []
@@ -334,7 +334,7 @@ class SolverImpl(upf.solvers.Solver):
         else:
             raise
         for start, ai, duration in steps:
-            action = actions_map[ai.action().name()]
+            action = actions_map[ai.action().name]
             params = []
             for p in ai.actual_parameters():
                 if p.is_object_exp():
