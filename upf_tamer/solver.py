@@ -379,7 +379,7 @@ class SolverImpl(upf.solvers.Solver):
         supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('EQUALITY') # type: ignore
-        return problem_kind < supported_kind
+        return problem_kind <= supported_kind
 
     @staticmethod
     def is_oneshot_planner() -> bool:
