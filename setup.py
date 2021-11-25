@@ -16,6 +16,7 @@ class InstallCommand(setuptools.command.install.install):
 
 upf_commit = '6b712922217df6b3e4e78eb8c14c652756b230a7'
 
+
 long_description=\
 '''============================================================
     UPF_TAMER
@@ -34,7 +35,7 @@ setup(name='upf_tamer',
       author_email='info@upf.com',
       url='https://aiplan4eu.fbk.eu/',
       packages=['upf_tamer'],
-      install_requires=[f'upf @ https://github.com/aiplan4eu/upf.git@{upf_commit}'],
+      install_requires=[f'upf@git+https://github.com/aiplan4eu/upf.git@{upf_commit}'],
       cmdclass={
         'install': InstallCommand,
         },
