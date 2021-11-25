@@ -25,6 +25,4 @@ wget https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer-${TAMERCOMMI
 unzip Tamer-${TAMERCOMMIT}.zip &> /dev/null
 rm Tamer-${TAMERCOMMIT}.zip
 
-python3 ${DIR}/install.py
-
 rm -rf Tamer
