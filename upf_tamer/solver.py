@@ -203,7 +203,7 @@ class SolverImpl(upf.solvers.Solver):
         user_types_map = {}
         instances = []
         instances_map = {}
-        for ut in problem.user_types().values():
+        for ut in problem.user_types():
             name = ut.name() # type: ignore
             new_ut = pytamer.tamer_user_type_new(self._env, name)
             user_types.append(new_ut)
@@ -215,13 +215,13 @@ class SolverImpl(upf.solvers.Solver):
 
         fluents = []
         fluents_map = {}
-        for f in problem.fluents().values():
+        for f in problem.fluents():
             new_f = self._convert_fluent(f, user_types_map)
             fluents.append(new_f)
             fluents_map[f] = new_f
 
         actions = []
-        for a in problem.actions_list():
+        for a in problem.actions():
             new_a = self._convert_action(a, fluents_map, user_types_map, instances_map)
             actions.append(new_a)
 
@@ -264,7 +264,7 @@ class SolverImpl(upf.solvers.Solver):
             return None
         expr_manager = problem.env.expression_manager
         objects = {}
-        for ut in problem.user_types().values():
+        for ut in problem.user_types():
             for obj in problem.objects(ut):
                 objects[obj.name()] = obj
         actions = []
