@@ -221,7 +221,7 @@ class SolverImpl(upf.solvers.Solver):
             fluents_map[f] = new_f
 
         actions = []
-        for a in problem.actions().values():
+        for a in problem.actions_list():
             new_a = self._convert_action(a, fluents_map, user_types_map, instances_map)
             actions.append(new_a)
 
