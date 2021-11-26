@@ -14,7 +14,7 @@
 
 import os
 import shutil
-from pysmt.cmd.installers.base import solver_install_site
+from pysmt.cmd.installers.base import solver_install_site # type: ignore
 
 
 if __name__ == '__main__':
