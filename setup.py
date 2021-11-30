@@ -111,11 +111,6 @@ class InstallCommand(setuptools.command.install.install):
     shutil.copyfile(os.path.join(dir_path, 'Tamer', 'pytamer.py'), os.path.join(bindings_dir, 'pytamer.py'))
     shutil.copyfile(os.path.join(dir_path, 'Tamer', '_pytamer.so'), os.path.join(bindings_dir, '_pytamer.so'))
 
-    if os.path.exists(os.path.join(bindings_dir, 'upf_tamer')):
-        shutil.rmtree(os.path.join(bindings_dir, 'upf_tamer'))
-
-    shutil.copytree(os.path.join(dir_path, 'upf_tamer'), os.path.join(bindings_dir, 'upf_tamer'))
-
     subprocess.run('rm -rf Tamer', shell=True)
 
     setuptools.command.install.install.run(self)
