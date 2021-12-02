@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 
+import os
+import sys
+import setuptools.command.install
 from setuptools import setup # type: ignore
 from setuptools.dist import Distribution
-import os
-import shutil
-import setuptools.command.install
-import subprocess
-import sys
 
-upf_commit = 'e5cfd58ac83cfd96556fd4461517b4c1a5330bfb'
+
 tamer_commit = 'ed3e21b306a37ac0045c2310ad1e26021f40865f'
-
 
 long_description=\
 '''============================================================
@@ -92,28 +89,25 @@ def package_install_site(name='', user=False, plat_specific=False):
     return loc
 
 
-class InstallCommand(setuptools.command.install.install):
-  '''Custom install command.'''
+class InstallPyTamer(setuptools.command.install.install):
+    '''Custom install command.'''
 
-  def run(self):
+    def run(self):
+        import shutil
+        import wget
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        bindings_dir = os.path.expanduser(solver_install_site(plat_specific=True))
 
-    cmds = [
-            'rm -rf Tamer Tamer.zip',
-            f'wget https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer-{tamer_commit}.zip &> /dev/null',
-            f'unzip Tamer-{tamer_commit}.zip &> /dev/null',
-            f'rm Tamer-{tamer_commit}.zip']
-    for cmd in cmds:
-      subprocess.run(cmd, capture_output=True, shell=True)
+        wget.download(f'https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer-{tamer_commit}.zip')
+        shutil.unpack_archive(os.path.join(dir_path, f'Tamer-{tamer_commit}.zip'), dir_path)
+        os.remove(os.path.join(dir_path, f'Tamer-{tamer_commit}.zip'))
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    bindings_dir = os.path.expanduser(solver_install_site(plat_specific=True))
+        shutil.copyfile(os.path.join(dir_path, 'Tamer', 'pytamer.py'), os.path.join(bindings_dir, 'pytamer.py'))
+        shutil.copyfile(os.path.join(dir_path, 'Tamer', '_pytamer.so'), os.path.join(bindings_dir, '_pytamer.so'))
 
-    shutil.copyfile(os.path.join(dir_path, 'Tamer', 'pytamer.py'), os.path.join(bindings_dir, 'pytamer.py'))
-    shutil.copyfile(os.path.join(dir_path, 'Tamer', '_pytamer.so'), os.path.join(bindings_dir, '_pytamer.so'))
+        shutil.rmtree(os.path.join(dir_path, 'Tamer'))
 
-    subprocess.run('rm -rf Tamer', shell=True)
-
-    setuptools.command.install.install.run(self)
+        setuptools.command.install.install.run(self)
 
 
 setup(name='upf_tamer',
@@ -121,11 +115,12 @@ setup(name='upf_tamer',
       description='upf_tamer',
       author='AIPlan4EU Organization',
       author_email='aiplan4eu@fbk.eu',
-      url='https://aiplan4eu.fbk.eu/',
+      url='https://www.aiplan4eu-project.eu',
       packages=['upf_tamer'],
-      install_requires=[f'upf@git+https://github.com/aiplan4eu/upf.git@{upf_commit}'],
+      install_requires=[],
+      python_requires='==3.8.*',
       cmdclass={
-        'install': InstallCommand,
+        'install': InstallPyTamer,
         },
       license='APACHE'
      )
