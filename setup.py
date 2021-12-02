@@ -3,7 +3,7 @@
 import os
 import sys
 import shutil
-import requests
+import urllib.request
 import setuptools.command.install
 from setuptools import setup # type: ignore
 from setuptools.dist import Distribution
@@ -99,8 +99,8 @@ class InstallPyTamer(setuptools.command.install.install):
         bindings_dir = os.path.expanduser(solver_install_site(plat_specific=True))
 
         url = f'https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer-{tamer_commit}.zip'
-        r = requests.get(url)
-        open('Tamer.zip' , 'wb').write(r.content)
+        with urllib.request.urlopen(url) as response, open(os.path.join(dir_path, 'Tamer.zip'), 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
         shutil.unpack_archive(os.path.join(dir_path, 'Tamer.zip'), dir_path)
         os.remove(os.path.join(dir_path, 'Tamer.zip'))
 
