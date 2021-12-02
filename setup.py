@@ -2,6 +2,8 @@
 
 import os
 import sys
+import shutil
+import requests
 import setuptools.command.install
 from setuptools import setup # type: ignore
 from setuptools.dist import Distribution
@@ -93,14 +95,14 @@ class InstallPyTamer(setuptools.command.install.install):
     '''Custom install command.'''
 
     def run(self):
-        import shutil
-        import wget
         dir_path = os.path.dirname(os.path.realpath(__file__))
         bindings_dir = os.path.expanduser(solver_install_site(plat_specific=True))
 
-        wget.download(f'https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer-{tamer_commit}.zip')
-        shutil.unpack_archive(os.path.join(dir_path, f'Tamer-{tamer_commit}.zip'), dir_path)
-        os.remove(os.path.join(dir_path, f'Tamer-{tamer_commit}.zip'))
+        url = f'https://es-static.fbk.eu/people/amicheli/tamer/aiplan4eu/Tamer-{tamer_commit}.zip'
+        r = requests.get(url)
+        open('Tamer.zip' , 'wb').write(r.content)
+        shutil.unpack_archive(os.path.join(dir_path, 'Tamer.zip'), dir_path)
+        os.remove(os.path.join(dir_path, 'Tamer.zip'))
 
         shutil.copyfile(os.path.join(dir_path, 'Tamer', 'pytamer.py'), os.path.join(bindings_dir, 'pytamer.py'))
         shutil.copyfile(os.path.join(dir_path, 'Tamer', '_pytamer.so'), os.path.join(bindings_dir, '_pytamer.so'))
