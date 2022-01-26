@@ -13,11 +13,11 @@ tamer_commit = 'ed3e21b306a37ac0045c2310ad1e26021f40865f'
 
 long_description=\
 '''============================================================
-    UPF_TAMER
+    UP_TAMER
  ============================================================
 
-    upf_tamer is a small package that allows an exchange of
-    equivalent data structures between UPF and Tamer.
+    up_tamer is a small package that allows an exchange of
+    equivalent data structures between unified_planning and Tamer.
     It automatically considers the different programming languages.
 '''
 
@@ -112,13 +112,13 @@ class InstallPyTamer(setuptools.command.install.install):
         setuptools.command.install.install.run(self)
 
 
-setup(name='upf_tamer',
+setup(name='up_tamer',
       version='0.0.1',
-      description='upf_tamer',
+      description='up_tamer',
       author='AIPlan4EU Organization',
       author_email='aiplan4eu@fbk.eu',
       url='https://www.aiplan4eu-project.eu',
-      packages=['upf_tamer'],
+      packages=['up_tamer'],
       install_requires=[],
       python_requires='==3.8.*',
       cmdclass={
