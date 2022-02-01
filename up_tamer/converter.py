@@ -13,18 +13,18 @@
 # limitations under the License.
 #
 
-import upf
-from upf.model import FNode
-from upf.walkers import DagWalker
+import unified_planning as up
+from unified_planning.model import FNode
+from unified_planning.walkers import DagWalker
 import pytamer # type: ignore
 from typing import Dict, List
 
 
 class Converter(DagWalker):
     def __init__(self, env: pytamer.tamer_env,
-                 fluents: Dict['upf.model.Fluent', pytamer.tamer_fluent] = {},
-                 instances: Dict['upf.model.Object', pytamer.tamer_instance] = {},
-                 parameters: Dict['upf.model.ActionParameter', pytamer.tamer_param]={}):
+                 fluents: Dict['up.model.Fluent', pytamer.tamer_fluent] = {},
+                 instances: Dict['up.model.Object', pytamer.tamer_instance] = {},
+                 parameters: Dict['up.model.ActionParameter', pytamer.tamer_param]={}):
         DagWalker.__init__(self)
         self._env = env
         self._fluents = fluents
