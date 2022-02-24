@@ -89,7 +89,7 @@ class SolverImpl(up.solvers.Solver):
         return pytamer.tamer_fluent_new(self._env, name, ttype, [], params)
 
     def _convert_timing(self, timing: 'up.model.Timing') -> pytamer.tamer_expr:
-        k = timing.bound()
+        k = timing.delay()
         if isinstance(k, int):
             c = pytamer.tamer_expr_make_integer_constant(self._env, k)
         elif isinstance(k, float):
@@ -117,6 +117,8 @@ class SolverImpl(up.solvers.Solver):
             return pytamer.tamer_expr_make_point_interval(self._env, c)
 
     def _convert_interval(self, interval: 'up.model.Interval') -> pytamer.tamer_expr:
+        if interval.lower() == interval.upper():
+            return self._convert_timing(interval.lower())
         lower = pytamer.tamer_expr_get_child(self._convert_timing(interval.lower()), 0)
         upper = pytamer.tamer_expr_get_child(self._convert_timing(interval.upper()), 0)
         if interval.is_left_open() and interval.is_right_open():
@@ -172,16 +174,10 @@ class SolverImpl(up.solvers.Solver):
                                                   pytamer.tamer_expr_make_integer_constant(self._env, 1))
             expressions.append(expr)
         elif isinstance(action, up.model.DurativeAction):
-            for t, l in action.conditions().items():
+            for i, l in action.conditions().items():
                 for c in l:
                     expr = pytamer.tamer_expr_make_temporal_expression(self._env,
-                                                                       self._convert_timing(t),
-                                                                       converter.convert(c))
-                    expressions.append(expr)
-            for t, l in action.durative_conditions().items():
-                for c in l:
-                    expr = pytamer.tamer_expr_make_temporal_expression(self._env,
-                                                                       self._convert_interval(t),
+                                                                       self._convert_interval(i),
                                                                        converter.convert(c))
                     expressions.append(expr)
             for t, l in action.effects().items():
