@@ -239,13 +239,7 @@ class SolverImpl(up.solvers.Solver):
                                                      converter.convert(e.value()))
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, t, ass)
                 expressions.append(expr)
-        for t, l in problem.timed_goals().items():
-            t = self._convert_timing(t)
-            for g in l:
-                expr = pytamer.tamer_expr_make_temporal_expression(self._env, t,
-                                                                   converter.convert(g))
-                expressions.append(expr)
-        for i, l in problem.maintain_goals().items():
+        for i, l in problem.timed_goals().items():
             i = self._convert_interval(i)
             for g in l:
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, i,
@@ -367,7 +361,6 @@ class SolverImpl(up.solvers.Solver):
         supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS') # type: ignore
         supported_kind.set_time('TIMED_EFFECT') # type: ignore
         supported_kind.set_time('TIMED_GOALS') # type: ignore
-        supported_kind.set_time('MAINTAIN_GOALS') # type: ignore
         supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
         supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
         supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
