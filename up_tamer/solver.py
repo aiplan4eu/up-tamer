@@ -81,7 +81,7 @@ class SolverImpl(up.solvers.Solver):
         ttype = self._convert_type(typename, user_types_map)
         params = []
         i = 0
-        for t in fluent.signature():
+        for t in fluent.signature().values():
             ptype = self._convert_type(t, user_types_map)
             p = pytamer.tamer_parameter_new("p"+str(i), ptype)
             i += 1
