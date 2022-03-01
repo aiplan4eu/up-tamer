@@ -18,7 +18,7 @@ from unified_planning.model import FNode
 from unified_planning.walkers import DagWalker
 import pytamer # type: ignore
 from typing import Dict, List
-
+ 
 
 class Converter(DagWalker):
     def __init__(self, env: pytamer.tamer_env,
