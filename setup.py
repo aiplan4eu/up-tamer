@@ -129,7 +129,7 @@ class InstallPyTamer37(InstallPyTamer):
         InstallPyTamer.__init__('3.7')
 
 
-if sys.version_info == (3,7):
+if sys.version_info >= (3,8):
     setup(name='up_tamer',
           version='0.0.1',
           description='up_tamer',
@@ -138,9 +138,9 @@ if sys.version_info == (3,7):
           url='https://www.aiplan4eu-project.eu',
           packages=['up_tamer'],
           install_requires=[],
-          python_requires='==3.7.*',
+          python_requires='==3.8.*',
           cmdclass={
-              'install': InstallPyTamer37,
+              'install': InstallPyTamer38,
           },
           license='APACHE'
     )
@@ -153,9 +153,9 @@ else:
           url='https://www.aiplan4eu-project.eu',
           packages=['up_tamer'],
           install_requires=[],
-          python_requires='==3.8.*',
+          python_requires='==3.7.*',
           cmdclass={
-              'install': InstallPyTamer38,
+              'install': InstallPyTamer37,
           },
           license='APACHE'
     )
