@@ -94,7 +94,8 @@ def package_install_site(name='', user=False, plat_specific=False):
 class InstallPyTamer(setuptools.command.install.install):
     '''Custom install command.'''
 
-    def __init__(self, version):
+    def __init__(self, version, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._version = version
 
     def run(self):
@@ -118,15 +119,15 @@ class InstallPyTamer(setuptools.command.install.install):
 class InstallPyTamer38(InstallPyTamer):
     '''Custom install command.'''
 
-    def __init__(self):
-        InstallPyTamer.__init__('3.8')
+    def __init__(self, *args, **kwargs):
+        InstallPyTamer.__init__(self, '3.8', *args, **kwargs)
 
 
 class InstallPyTamer37(InstallPyTamer):
     '''Custom install command.'''
 
-    def __init__(self):
-        InstallPyTamer.__init__('3.7')
+    def __init__(self, *args, **kwargs):
+        InstallPyTamer.__init__(self, '3.7', *args, **kwargs)
 
 
 if sys.version_info >= (3,8):
