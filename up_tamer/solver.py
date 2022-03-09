@@ -17,7 +17,7 @@ import pytamer # type: ignore
 from unified_planning.model import ProblemKind
 from up_tamer.converter import Converter
 from fractions import Fraction
-from typing import Optional, Dict, List, Tuple
+from typing import Callable, Optional, Dict, List, Tuple
 
 
 class SolverImpl(up.solvers.Solver):
@@ -292,7 +292,7 @@ class SolverImpl(up.solvers.Solver):
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem: 'up.model.Problem') -> Optional['up.plan.Plan']:
+    def solve(self, problem: 'up.model.Problem', callback: Optional[Callable[['up.plan.IntermediateReport'], None]] = None) -> 'up.plan.FinalReport':
         assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
@@ -303,7 +303,8 @@ class SolverImpl(up.solvers.Solver):
             if self._heuristic is not None:
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
-        return self._to_up_plan(problem, ttplan)
+        plan = self._to_up_plan(problem, ttplan)
+        return up.plan.FinalReport(up.plan.UNSATISFIED if plan is None else up.plan.SATISFIED, plan, self.name())
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
