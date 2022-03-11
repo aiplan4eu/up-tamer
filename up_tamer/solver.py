@@ -292,7 +292,7 @@ class SolverImpl(up.solvers.Solver):
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem: 'up.model.Problem', callback: Optional[Callable[['up.plan.IntermediateReport'], None]] = None) -> 'up.plan.FinalReport':
+    def solve(self, problem: 'up.model.Problem', callback: Optional[Callable[['up.plan.PlanGenerationResult'], None]] = None) -> 'up.plan.PlanGenerationResult':
         assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
@@ -304,7 +304,7 @@ class SolverImpl(up.solvers.Solver):
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
         plan = self._to_up_plan(problem, ttplan)
-        return up.plan.FinalReport(up.plan.UNSATISFIED if plan is None else up.plan.SATISFIED, plan, self.name())
+        return up.plan.PlanGenerationResult(up.plan.UNSATISFIED if plan is None else up.plan.SATISFIED, plan, self.name())
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
