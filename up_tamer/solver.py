@@ -76,17 +76,14 @@ class SolverImpl(up.solvers.Solver):
     def _convert_fluent(self, fluent: 'up.model.Fluent',
                         user_types_map: Dict['up.model.Type',
                                              pytamer.tamer_fluent]) -> pytamer.tamer_fluent:
-        name = fluent.name()
         typename = fluent.type()
         ttype = self._convert_type(typename, user_types_map)
         params = []
-        i = 0
-        for t in fluent.signature():
-            ptype = self._convert_type(t, user_types_map)
-            p = pytamer.tamer_parameter_new("p"+str(i), ptype)
-            i += 1
+        for param in fluent.signature():
+            ptype = self._convert_type(param.type(), user_types_map)
+            p = pytamer.tamer_parameter_new(param.name(), ptype)
             params.append(p)
-        return pytamer.tamer_fluent_new(self._env, name, ttype, [], params)
+        return pytamer.tamer_fluent_new(self._env, fluent.name(), ttype, [], params)
 
     def _convert_timing(self, timing: 'up.model.Timing') -> pytamer.tamer_expr:
         k = timing.delay()
