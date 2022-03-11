@@ -345,6 +345,7 @@ class SolverImpl(up.solvers.Solver):
             pytamer.tamer_ttplan_add_step(ttplan, step)
         return ttplan
 
+
     def validate(self, problem: 'up.model.Problem', plan: 'up.plan.Plan') -> bool:
         assert self.supports(problem.kind())
         tproblem = self._convert_problem(problem)
