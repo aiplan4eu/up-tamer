@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 import unified_planning as up
 import pytamer # type: ignore
 from unified_planning.model import ProblemKind
@@ -292,8 +293,12 @@ class SolverImpl(up.solvers.Solver):
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem: 'up.model.Problem', callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None) -> 'up.solvers.PlanGenerationResult':
+    def solve(self, problem: 'up.model.Problem', 
+                callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
+                timeout_seconds: Optional[float] = None) -> 'up.solvers.results.PlanGenerationResult':
         assert self.supports(problem.kind())
+        if timeout_seconds is not None:
+            warnings.warn('Tamer does not support timeout.', UserWarning)
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
             if self._heuristic is not None:
