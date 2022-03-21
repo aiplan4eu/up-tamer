@@ -18,7 +18,7 @@ import pytamer # type: ignore
 from unified_planning.model import ProblemKind
 from up_tamer.converter import Converter
 from fractions import Fraction
-from typing import Callable, Optional, Dict, List, Tuple
+from typing import IO, Callable, Optional, Dict, List, Tuple
 
 
 class SolverImpl(up.solvers.Solver):
@@ -295,7 +295,8 @@ class SolverImpl(up.solvers.Solver):
 
     def solve(self, problem: 'up.model.Problem',
                 callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
-                timeout: Optional[float] = None) -> 'up.solvers.results.PlanGenerationResult':
+                timeout: Optional[float] = None,
+                out: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
         assert self.supports(problem.kind())
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
