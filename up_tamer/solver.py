@@ -300,6 +300,8 @@ class SolverImpl(up.solvers.Solver):
         assert self.supports(problem.kind())
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
+        if out is not None:
+            warnings.warn('Tamer does not support out.', UserWarning)
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
             if self._heuristic is not None:
