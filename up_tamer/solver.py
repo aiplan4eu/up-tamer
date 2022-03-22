@@ -296,12 +296,12 @@ class SolverImpl(up.solvers.Solver):
     def solve(self, problem: 'up.model.Problem',
                 callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
                 timeout: Optional[float] = None,
-                out: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
+                output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
         assert self.supports(problem.kind())
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
-        if out is not None:
-            warnings.warn('Tamer does not support out.', UserWarning)
+        if output_stream is not None:
+            warnings.warn('Tamer does not support output stream.', UserWarning)
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
             if self._heuristic is not None:
