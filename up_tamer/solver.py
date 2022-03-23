@@ -164,10 +164,13 @@ class SolverImpl(up.solvers.Solver):
     def _convert_simulated_effects(self, converter: Converter, problem: 'up.model.Problem',
                                    timing: 'up.model.Timing', sim_eff: 'up.model.SimulatedEffects'):
         fluents = [converter.convert(x) for x in sim_eff.fluents()]
-        def f(ts: pytamer.tamer_state, interpretation: pytamer.tamer_interpretation, res: List[pytamer.tamer_expr]):
+        def f(ts: pytamer.tamer_classical_state,
+              interpretation: pytamer.tamer_interpretation,
+              res: pytamer.tamer_vector_expr):
             s = TState(ts, interpretation, converter)
             vec = sim_eff.function()(problem, s)
-            res = [converter.convert(x) for x in vec]
+            for x in vec:
+                pytamer.tamer_vector_add_expr(res, converter.convert(x))
         return pytamer.tamer_simulated_effects_new(self._convert_timing(timing), fluents, f);
 
     def _convert_action(self, problem: 'up.model.Problem', action: 'up.model.Action',
@@ -222,7 +225,7 @@ class SolverImpl(up.solvers.Solver):
             expressions.append(self._convert_duration(converter, action.duration))
         else:
             raise
-        return pytamer.tamer_action_new(self._env, action.name, [], params, expressions)
+        return pytamer.tamer_action_new(self._env, action.name, [], params, expressions, simulated_effects)
 
     def _convert_problem(self, problem: 'up.model.Problem') -> pytamer.tamer_problem:
         user_types = []
@@ -318,15 +321,18 @@ class SolverImpl(up.solvers.Solver):
         if output_stream is not None:
             warnings.warn('Tamer does not support output stream.', UserWarning)
         tproblem = self._convert_problem(problem)
-        if problem.kind.has_continuous_time(): # type: ignore
+        if problem.kind.has_continuous_time() or problem.kind.has_simulated_effects(): # type: ignore
             if self._heuristic is not None:
-                pytamer.tamer_env_set_string_option(self._env, 'ftp-heuristic', self._heuristic)
+                pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
             ttplan = pytamer.tamer_do_ftp_planning(tproblem)
         else:
             if self._heuristic is not None:
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
-        plan = self._to_up_plan(problem, ttplan)
+        if pytamer.tamer_ttplan_is_error(ttplan) == 1:
+            plan = None
+        else:
+            plan = self._to_up_plan(problem, ttplan)
         return up.solvers.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
