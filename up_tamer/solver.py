@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 import unified_planning as up
 import pytamer # type: ignore
 from unified_planning.model import ProblemKind
 from up_tamer.converter import Converter
 from fractions import Fraction
-from typing import Callable, Optional, Dict, List, Tuple
+from typing import IO, Callable, Optional, Dict, List, Tuple
 
 
 class SolverImpl(up.solvers.Solver):
@@ -292,8 +293,15 @@ class SolverImpl(up.solvers.Solver):
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem: 'up.model.Problem', callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None) -> 'up.solvers.PlanGenerationResult':
+    def solve(self, problem: 'up.model.Problem',
+                callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
+                timeout: Optional[float] = None,
+                output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
         assert self.supports(problem.kind())
+        if timeout is not None:
+            warnings.warn('Tamer does not support timeout.', UserWarning)
+        if output_stream is not None:
+            warnings.warn('Tamer does not support output stream.', UserWarning)
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
             if self._heuristic is not None:
