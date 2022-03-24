@@ -312,7 +312,7 @@ class SolverImpl(up.solvers.Solver):
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
         plan = self._to_up_plan(problem, ttplan)
-        return up.solvers.PlanGenerationResult(up.solvers.results.UNSATISFIED if plan is None else up.solvers.results.SATISFIED, plan, self.name())
+        return up.solvers.PlanGenerationResult(up.solvers.results.UNSOLVABLE_PROVEN if plan is None else up.solvers.results.SOLVED_SATISFICING, plan, self.name())
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
