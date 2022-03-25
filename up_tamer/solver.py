@@ -162,13 +162,19 @@ class SolverImpl(up.solvers.Solver):
         return pytamer.tamer_expr_make_and(self._env, l, u)
 
     def _convert_simulated_effects(self, converter: Converter, problem: 'up.model.Problem',
-                                   timing: 'up.model.Timing', sim_eff: 'up.model.SimulatedEffects'):
+                                   action: 'up.model.Action', timing: 'up.model.Timing',
+                                   sim_eff: 'up.model.SimulatedEffects'):
         fluents = [converter.convert(x) for x in sim_eff.fluents()]
         def f(ts: pytamer.tamer_classical_state,
               interpretation: pytamer.tamer_interpretation,
+              actual_params: pytamer.tamer_vector_expr,
               res: pytamer.tamer_vector_expr):
             s = TState(ts, interpretation, converter)
-            vec = sim_eff.function()(problem, s)
+            actual_params_dict = {}
+            for i, p in enumerate(action.parameters()):
+                tvalue = pytamer.tamer_vector_get_expr(actual_params, i)
+                actual_params_dict[p] = converter.convert_back(tvalue)
+            vec = sim_eff.function()(problem, s, actual_params_dict)
             for x in vec:
                 pytamer.tamer_vector_add_expr(res, converter.convert(x))
         return pytamer.tamer_simulated_effects_new(self._convert_timing(timing), fluents, f);
@@ -202,7 +208,7 @@ class SolverImpl(up.solvers.Solver):
             expressions.append(expr)
             se = action.simulated_effects()
             if se is not None:
-                simulated_effects.append(self._convert_simulated_effects(converter, problem,
+                simulated_effects.append(self._convert_simulated_effects(converter, problem, action,
                                                                          up.model.StartTiming(), se))
         elif isinstance(action, up.model.DurativeAction):
             for i, lc in action.conditions.items():
@@ -221,7 +227,7 @@ class SolverImpl(up.solvers.Solver):
                                                                        ass)
                     expressions.append(expr)
             for t, se in action.simulated_effects.items():
-                simulated_effects.append(self._convert_simulated_effects(converter, problem, t, se))
+                simulated_effects.append(self._convert_simulated_effects(converter, problem, action, t, se))
             expressions.append(self._convert_duration(converter, action.duration))
         else:
             raise
