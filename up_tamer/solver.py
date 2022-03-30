@@ -49,8 +49,8 @@ class SolverImpl(up.solvers.Solver):
         elif typename.is_user_type():
             ttype = user_types_map[typename]
         elif typename.is_int_type():
-            lb = typename.lower_bound() # type: ignore
-            ub = typename.upper_bound() # type: ignore
+            lb = typename.lower_bound # type: ignore
+            ub = typename.upper_bound # type: ignore
             if lb is None and ub is None:
                 ttype = pytamer.tamer_integer_type(self._env)
             elif lb is None:
@@ -60,8 +60,8 @@ class SolverImpl(up.solvers.Solver):
             else:
                 ttype = pytamer.tamer_integer_type_lub(self._env, lb, ub)
         elif typename.is_real_type():
-            lb = typename.lower_bound() # type: ignore
-            ub = typename.upper_bound() # type: ignore
+            lb = typename.lower_bound # type: ignore
+            ub = typename.upper_bound # type: ignore
             if lb is None and ub is None:
                 ttype = pytamer.tamer_rational_type(self._env)
             elif lb is None:
@@ -77,17 +77,17 @@ class SolverImpl(up.solvers.Solver):
     def _convert_fluent(self, fluent: 'up.model.Fluent',
                         user_types_map: Dict['up.model.Type',
                                              pytamer.tamer_fluent]) -> pytamer.tamer_fluent:
-        typename = fluent.type()
+        typename = fluent.type
         ttype = self._convert_type(typename, user_types_map)
         params = []
-        for param in fluent.signature():
-            ptype = self._convert_type(param.type(), user_types_map)
-            p = pytamer.tamer_parameter_new(param.name(), ptype)
+        for param in fluent.signature:
+            ptype = self._convert_type(param.type, user_types_map)
+            p = pytamer.tamer_parameter_new(param.name, ptype)
             params.append(p)
-        return pytamer.tamer_fluent_new(self._env, fluent.name(), ttype, [], params)
+        return pytamer.tamer_fluent_new(self._env, fluent.name, ttype, [], params)
 
     def _convert_timing(self, timing: 'up.model.Timing') -> pytamer.tamer_expr:
-        k = timing.delay()
+        k = timing.delay
         if isinstance(k, int):
             c = pytamer.tamer_expr_make_integer_constant(self._env, k)
         elif isinstance(k, float):
@@ -115,10 +115,10 @@ class SolverImpl(up.solvers.Solver):
             return pytamer.tamer_expr_make_point_interval(self._env, c)
 
     def _convert_interval(self, interval: 'up.model.Interval') -> pytamer.tamer_expr:
-        if interval.lower() == interval.upper():
-            return self._convert_timing(interval.lower())
-        lower = pytamer.tamer_expr_get_child(self._convert_timing(interval.lower()), 0)
-        upper = pytamer.tamer_expr_get_child(self._convert_timing(interval.upper()), 0)
+        if interval.lower == interval.upper:
+            return self._convert_timing(interval.lower)
+        lower = pytamer.tamer_expr_get_child(self._convert_timing(interval.lower), 0)
+        upper = pytamer.tamer_expr_get_child(self._convert_timing(interval.upper), 0)
         if interval.is_left_open() and interval.is_right_open():
             return pytamer.tamer_expr_make_open_interval(self._env, lower, upper)
         elif interval.is_left_open():
@@ -131,9 +131,9 @@ class SolverImpl(up.solvers.Solver):
     def _convert_duration(self, converter: Converter,
                           duration: 'up.model.IntervalDuration') -> pytamer.tamer_expr:
         d = pytamer.tamer_expr_make_duration_anchor(self._env)
-        lower = converter.convert(duration.lower())
-        upper = converter.convert(duration.upper())
-        if duration.lower() == duration.upper():
+        lower = converter.convert(duration.lower)
+        upper = converter.convert(duration.upper)
+        if duration.lower == duration.upper:
             return pytamer.tamer_expr_make_equals(self._env, d, lower)
         if duration.is_left_open():
             l = pytamer.tamer_expr_make_gt(self._env, d, lower)
@@ -151,43 +151,43 @@ class SolverImpl(up.solvers.Solver):
                         instances_map: Dict['up.model.Object', pytamer.tamer_instance]) -> pytamer.tamer_action:
         params = []
         params_map = {}
-        for p in action.parameters():
-            ptype = self._convert_type(p.type(), user_types_map)
-            new_p = pytamer.tamer_parameter_new(p.name(), ptype)
+        for p in action.parameters:
+            ptype = self._convert_type(p.type, user_types_map)
+            new_p = pytamer.tamer_parameter_new(p.name, ptype)
             params.append(new_p)
             params_map[p] = new_p
         expressions = []
         converter = Converter(self._env, fluents_map, instances_map, params_map)
         if isinstance(action, up.model.InstantaneousAction):
-            for c in action.preconditions():
+            for c in action.preconditions:
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start,
                                                                    converter.convert(c))
                 expressions.append(expr)
-            for e in action.effects():
+            for e in action.effects:
                 assert not e.is_conditional() and e.is_assignment()
-                ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent()), converter.convert(e.value()))
+                ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), converter.convert(e.value))
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start, ass)
                 expressions.append(expr)
             expr = pytamer.tamer_expr_make_assign(self._env, pytamer.tamer_expr_make_duration_anchor(self._env),
                                                   pytamer.tamer_expr_make_integer_constant(self._env, 1))
             expressions.append(expr)
         elif isinstance(action, up.model.DurativeAction):
-            for i, l in action.conditions().items():
+            for i, l in action.conditions.items():
                 for c in l:
                     expr = pytamer.tamer_expr_make_temporal_expression(self._env,
                                                                        self._convert_interval(i),
                                                                        converter.convert(c))
                     expressions.append(expr)
-            for t, l in action.effects().items():
+            for t, l in action.effects.items():
                 for e in l:
                     assert not e.is_conditional() and e.is_assignment()
-                    ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent()),
-                                                         converter.convert(e.value()))
+                    ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent),
+                                                         converter.convert(e.value))
                     expr = pytamer.tamer_expr_make_temporal_expression(self._env,
                                                                        self._convert_timing(t),
                                                                        ass)
                     expressions.append(expr)
-            expressions.append(self._convert_duration(converter, action.duration()))
+            expressions.append(self._convert_duration(converter, action.duration))
         else:
             raise
         return pytamer.tamer_action_new(self._env, action.name, [], params, expressions)
@@ -197,47 +197,47 @@ class SolverImpl(up.solvers.Solver):
         user_types_map = {}
         instances = []
         instances_map = {}
-        for ut in problem.user_types():
-            name = ut.name() # type: ignore
+        for ut in problem.user_types:
+            name = ut.name # type: ignore
             new_ut = pytamer.tamer_user_type_new(self._env, name)
             user_types.append(new_ut)
             user_types_map[ut] = new_ut
             for obj in problem.objects(ut):
-                new_obj = pytamer.tamer_instance_new(self._env, obj.name(), user_types_map[ut])
+                new_obj = pytamer.tamer_instance_new(self._env, obj.name, user_types_map[ut])
                 instances.append(new_obj)
                 instances_map[obj] = new_obj
 
         fluents = []
         fluents_map = {}
-        for f in problem.fluents():
+        for f in problem.fluents:
             new_f = self._convert_fluent(f, user_types_map)
             fluents.append(new_f)
             fluents_map[f] = new_f
 
         actions = []
-        for a in problem.actions():
+        for a in problem.actions:
             new_a = self._convert_action(a, fluents_map, user_types_map, instances_map)
             actions.append(new_a)
 
         expressions = []
         converter = Converter(self._env, fluents_map, instances_map)
-        for k, v in problem.initial_values().items():
+        for k, v in problem.initial_values.items():
             ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(k), converter.convert(v))
             expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start, ass)
             expressions.append(expr)
-        for g in problem.goals():
+        for g in problem.goals:
             expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_end,
                                                                converter.convert(g))
             expressions.append(expr)
-        for t, le in problem.timed_effects().items():
+        for t, le in problem.timed_effects.items():
             t = self._convert_timing(t)
             for e in le:
                 assert not e.is_conditional() and e.is_assignment()
-                ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent()),
-                                                     converter.convert(e.value()))
+                ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent),
+                                                     converter.convert(e.value))
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, t, ass)
                 expressions.append(expr)
-        for i, l in problem.timed_goals().items():
+        for i, l in problem.timed_goals.items():
             i = self._convert_interval(i)
             for g in l:
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, i,
@@ -252,9 +252,9 @@ class SolverImpl(up.solvers.Solver):
             return None
         expr_manager = problem.env.expression_manager
         objects = {}
-        for ut in problem.user_types():
+        for ut in problem.user_types:
             for obj in problem.objects(ut):
-                objects[obj.name()] = obj
+                objects[obj.name] = obj
         actions = []
         for s in pytamer.tamer_ttplan_get_steps(ttplan):
             taction = pytamer.tamer_ttplan_step_get_action(s)
@@ -281,7 +281,7 @@ class SolverImpl(up.solvers.Solver):
                     raise
                 params.append(new_p)
             actions.append((start, up.plan.ActionInstance(action, tuple(params)), duration))
-        if problem.kind().has_continuous_time(): # type: ignore
+        if problem.kind.has_continuous_time(): # type: ignore
             return up.plan.TimeTriggeredPlan(actions)
         else:
             return up.plan.SequentialPlan([a[1] for a in actions])
@@ -297,13 +297,13 @@ class SolverImpl(up.solvers.Solver):
                 callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
                 timeout: Optional[float] = None,
                 output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
-        assert self.supports(problem.kind())
+        assert self.supports(problem.kind)
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
         if output_stream is not None:
             warnings.warn('Tamer does not support output stream.', UserWarning)
         tproblem = self._convert_problem(problem)
-        if problem.kind().has_continuous_time(): # type: ignore
+        if problem.kind.has_continuous_time(): # type: ignore
             if self._heuristic is not None:
                 pytamer.tamer_env_set_string_option(self._env, 'ftp-heuristic', self._heuristic)
             ttplan = pytamer.tamer_do_ftp_planning(tproblem)
@@ -324,17 +324,17 @@ class SolverImpl(up.solvers.Solver):
         ttplan = pytamer.tamer_ttplan_new(self._env)
         steps: List[Tuple[Fraction, 'up.plan.ActionInstance', Optional[Fraction]]] = []
         if isinstance(plan, up.plan.SequentialPlan):
-            steps = [(Fraction(i*2), a, Fraction(1)) for i, a in enumerate(plan.actions())]
+            steps = [(Fraction(i*2), a, Fraction(1)) for i, a in enumerate(plan.actions)]
         elif isinstance(plan, up.plan.TimeTriggeredPlan):
-            steps = plan.actions()
+            steps = plan.actions
         else:
             raise
         for start, ai, duration in steps:
-            action = actions_map[ai.action().name]
+            action = actions_map[ai.action.name]
             params = []
-            for p in ai.actual_parameters():
+            for p in ai.actual_parameters:
                 if p.is_object_exp():
-                    i = instances_map[p.object().name()]
+                    i = instances_map[p.object().name]
                     params.append(pytamer.tamer_expr_make_instance_reference(self._env, i))
                 elif p.is_true():
                     params.append(pytamer.tamer_expr_make_true(self._env))
@@ -355,7 +355,7 @@ class SolverImpl(up.solvers.Solver):
         return ttplan
 
     def validate(self, problem: 'up.model.Problem', plan: 'up.plan.Plan') -> bool:
-        assert self.supports(problem.kind())
+        assert self.supports(problem.kind)
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
         return pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
