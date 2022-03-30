@@ -38,8 +38,8 @@ class SolverImpl(up.solvers.Solver):
             pytamer.tamer_expr_make_point_interval(self._env,
                                                    pytamer.tamer_expr_make_end_anchor(self._env))
 
-    @staticmethod
-    def name() -> str:
+    @property
+    def name(self) -> str:
         return 'Tamer'
 
     def _convert_type(self, typename: 'up.model.Type',
@@ -312,7 +312,7 @@ class SolverImpl(up.solvers.Solver):
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
         plan = self._to_up_plan(problem, ttplan)
-        return up.solvers.PlanGenerationResult(up.solvers.results.UNSOLVABLE_PROVEN if plan is None else up.solvers.results.SOLVED_SATISFICING, plan, self.name())
+        return up.solvers.PlanGenerationResult(up.solvers.results.UNSOLVABLE_PROVEN if plan is None else up.solvers.results.SOLVED_SATISFICING, plan, self.name)
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
