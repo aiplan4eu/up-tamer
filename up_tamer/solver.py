@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 import unified_planning as up
 import pytamer # type: ignore
 from unified_planning.model import ProblemKind
 from up_tamer.converter import Converter
 from fractions import Fraction
-from typing import Optional, Dict, List, Tuple
+from typing import IO, Callable, Optional, Dict, List, Tuple
 
 
 class SolverImpl(up.solvers.Solver):
@@ -292,8 +293,15 @@ class SolverImpl(up.solvers.Solver):
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem: 'up.model.Problem') -> Optional['up.plan.Plan']:
+    def solve(self, problem: 'up.model.Problem',
+                callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
+                timeout: Optional[float] = None,
+                output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
         assert self.supports(problem.kind())
+        if timeout is not None:
+            warnings.warn('Tamer does not support timeout.', UserWarning)
+        if output_stream is not None:
+            warnings.warn('Tamer does not support output stream.', UserWarning)
         tproblem = self._convert_problem(problem)
         if problem.kind().has_continuous_time(): # type: ignore
             if self._heuristic is not None:
@@ -303,7 +311,8 @@ class SolverImpl(up.solvers.Solver):
             if self._heuristic is not None:
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
-        return self._to_up_plan(problem, ttplan)
+        plan = self._to_up_plan(problem, ttplan)
+        return up.solvers.PlanGenerationResult(up.solvers.results.UNSOLVABLE_PROVEN if plan is None else up.solvers.results.SOLVED_SATISFICING, plan, self.name())
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
