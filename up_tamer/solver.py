@@ -327,7 +327,7 @@ class SolverImpl(up.solvers.Solver):
         if output_stream is not None:
             warnings.warn('Tamer does not support output stream.', UserWarning)
         tproblem = self._convert_problem(problem)
-        if problem.kind.has_continuous_time() or problem.kind.has_simulated_effects(): # type: ignore
+        if problem.kind.has_continuous_time(): # type: ignore
             if self._heuristic is not None:
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
             ttplan = pytamer.tamer_do_ftp_planning(tproblem)
