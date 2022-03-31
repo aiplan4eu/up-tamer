@@ -318,10 +318,10 @@ class SolverImpl(up.solvers.Solver):
         return ttplan
 
     def solve(self, problem: 'up.model.Problem',
-                callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
-                timeout: Optional[float] = None,
-                output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
-        assert self.supports(problem.kind)
+              callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
+              timeout: Optional[float] = None,
+              output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
+        assert self.supports(problem.kind())
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
         if output_stream is not None:
@@ -331,14 +331,13 @@ class SolverImpl(up.solvers.Solver):
             if self._heuristic is not None:
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
             ttplan = pytamer.tamer_do_ftp_planning(tproblem)
+            if pytamer.tamer_ttplan_is_error(ttplan) == 1:
+                ttplan = None
         else:
             if self._heuristic is not None:
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
-        if pytamer.tamer_ttplan_is_error(ttplan) == 1:
-            plan = None
-        else:
-            plan = self._to_up_plan(problem, ttplan)
+        plan = self._to_up_plan(problem, ttplan)
         return up.solvers.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
