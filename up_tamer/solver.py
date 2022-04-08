@@ -16,7 +16,7 @@ import warnings
 import unified_planning as up
 import pytamer # type: ignore
 from unified_planning.model import ProblemKind
-from unified_planning.solvers import PlanStatus
+from unified_planning.solvers import PlanGenerationResultStatus
 from up_tamer.converter import Converter
 from fractions import Fraction
 from typing import IO, Callable, Optional, Dict, List, Tuple
@@ -313,7 +313,7 @@ class SolverImpl(up.solvers.Solver):
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             ttplan = self._solve_classical_problem(tproblem)
         plan = self._to_up_plan(problem, ttplan)
-        return up.solvers.PlanGenerationResult(PlanStatus.UNSOLVABLE_PROVEN if plan is None else PlanStatus.SOLVED_SATISFICING, plan, self.name)
+        return up.solvers.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
