@@ -9,7 +9,7 @@ import setuptools.command.install
 from setuptools import setup # type: ignore
 
 
-tamer_commit = '158b7c1b1f4cdf2be95fe2f1d3365d9d438747c9'
+tamer_commit = '7f2d97e81affd402adb7970ff86b8db8790d1cc8'
 
 long_description=\
 '''============================================================
