@@ -163,7 +163,7 @@ class SolverImpl(up.solvers.Solver):
 
     def _convert_simulated_effects(self, converter: Converter, problem: 'up.model.Problem',
                                    action: 'up.model.Action', timing: 'up.model.Timing',
-                                   sim_eff: 'up.model.SimulatedEffects'):
+                                   sim_eff: 'up.model.SimulatedEffects') -> pytamer.tamer_simulated_effects:
         fluents = [converter.convert(x) for x in sim_eff.fluents]
         def f(ts: pytamer.tamer_classical_state,
               interpretation: pytamer.tamer_interpretation,
