@@ -45,7 +45,7 @@ class SolverImpl(up.solvers.Solver):
             pytamer.tamer_env_set_float_option(self._env, 'weight', weight)
         self._heuristic = heuristic
         if len(options) > 0:
-            raise
+            raise up.exceptions.UPUsageError('Custom options not supported!')
         self._bool_type = pytamer.tamer_boolean_type(self._env)
         self._tamer_start = \
             pytamer.tamer_expr_make_point_interval(self._env,
@@ -87,7 +87,7 @@ class SolverImpl(up.solvers.Solver):
             else:
                 ttype = pytamer.tamer_rational_type_lub(self._env, lb, ub)
         else:
-            assert False
+            raise NotImplementedError
         return ttype
 
     def _convert_fluent(self, fluent: 'up.model.Fluent',
@@ -112,7 +112,7 @@ class SolverImpl(up.solvers.Solver):
         elif isinstance(k, Fraction):
             c = pytamer.tamer_expr_make_rational_constant(self._env, k.numerator, k.denominator)
         else:
-            raise
+            raise NotImplementedError
         if timing.is_from_start():
             if k == 0:
                 return self._tamer_start
@@ -164,17 +164,17 @@ class SolverImpl(up.solvers.Solver):
     def _convert_simulated_effects(self, converter: Converter, problem: 'up.model.Problem',
                                    action: 'up.model.Action', timing: 'up.model.Timing',
                                    sim_eff: 'up.model.SimulatedEffects'):
-        fluents = [converter.convert(x) for x in sim_eff.fluents()]
+        fluents = [converter.convert(x) for x in sim_eff.fluents]
         def f(ts: pytamer.tamer_classical_state,
               interpretation: pytamer.tamer_interpretation,
               actual_params: pytamer.tamer_vector_expr,
               res: pytamer.tamer_vector_expr):
             s = TState(ts, interpretation, converter)
             actual_params_dict = {}
-            for i, p in enumerate(action.parameters()):
+            for i, p in enumerate(action.parameters):
                 tvalue = pytamer.tamer_vector_get_expr(actual_params, i)
                 actual_params_dict[p] = converter.convert_back(tvalue)
-            vec = sim_eff.function()(problem, s, actual_params_dict)
+            vec = sim_eff.function(problem, s, actual_params_dict)
             for x in vec:
                 pytamer.tamer_vector_add_expr(res, converter.convert(x))
         return pytamer.tamer_simulated_effects_new(self._convert_timing(timing), fluents, f);
@@ -230,7 +230,7 @@ class SolverImpl(up.solvers.Solver):
                 simulated_effects.append(self._convert_simulated_effects(converter, problem, action, t, se))
             expressions.append(self._convert_duration(converter, action.duration))
         else:
-            raise
+            raise NotImplementedError
         return pytamer.tamer_action_new(self._env, action.name, [], params, expressions, simulated_effects)
 
     def _convert_problem(self, problem: 'up.model.Problem') -> pytamer.tamer_problem:
@@ -321,7 +321,8 @@ class SolverImpl(up.solvers.Solver):
               callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
               timeout: Optional[float] = None,
               output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
-        assert self.supports(problem.kind())
+        if not self.supports(problem.kind):
+            raise up.exceptions.UPUsageError('Tamer cannot solve this kind of problem!')
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
         if output_stream is not None:
@@ -354,7 +355,7 @@ class SolverImpl(up.solvers.Solver):
         elif isinstance(plan, up.plan.TimeTriggeredPlan):
             steps = plan.actions
         else:
-            raise
+            raise NotImplementedError
         for start, ai, duration in steps:
             action = actions_map[ai.action.name]
             params = []
@@ -374,14 +375,17 @@ class SolverImpl(up.solvers.Solver):
                     d = f.denominator
                     params.append(pytamer.tamer_expr_make_rational_constant(self._env, n, d))
                 else:
-                    raise
+                    raise NotImplementedError
             step = pytamer.tamer_ttplan_step_new(str(start), action, params, str(duration), \
                                                  pytamer.tamer_expr_make_true(self._env))
             pytamer.tamer_ttplan_add_step(ttplan, step)
         return ttplan
 
     def validate(self, problem: 'up.model.Problem', plan: 'up.plan.Plan') -> bool:
-        assert self.supports(problem.kind)
+        if not self.supports(problem.kind):
+            raise up.exceptions.UPUsageError('Tamer cannot validate this kind of problem!')
+        if plan is None:
+            raise up.exceptions.UPUsageError('Tamer cannot validate an empty plan!')
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
         return pytamer.tamer_ttplan_validate(tproblem, tplan) == 1

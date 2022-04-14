@@ -34,9 +34,9 @@ class Converter(DagWalker):
         self._parameters = parameters
         self._expr_manager = problem.env.expression_manager
         self._objects = {}
-        for ut in problem.user_types():
+        for ut in problem.user_types:
             for obj in problem.objects(ut):
-                self._objects[obj.name()] = obj
+                self._objects[obj.name] = obj
 
     def convert(self, expression: 'FNode') -> pytamer.tamer_expr:
         """Converts the given expression."""
@@ -55,7 +55,7 @@ class Converter(DagWalker):
             n, d = pytamer.tamer_expr_get_rational_constant(self._env, expression)
             res = self._expr_manager.Real(Fraction(n, d))
         else:
-            raise
+            raise NotImplementedError
         return res
 
     def walk_and(self, expression: 'FNode',
