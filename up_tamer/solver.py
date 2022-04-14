@@ -206,7 +206,7 @@ class SolverImpl(up.solvers.Solver):
             expr = pytamer.tamer_expr_make_assign(self._env, pytamer.tamer_expr_make_duration_anchor(self._env),
                                                   pytamer.tamer_expr_make_integer_constant(self._env, 1))
             expressions.append(expr)
-            se = action.simulated_effects()
+            se = action.simulated_effects
             if se is not None:
                 simulated_effects.append(self._convert_simulated_effects(converter, problem, action,
                                                                          up.model.StartTiming(), se))
