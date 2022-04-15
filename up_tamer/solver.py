@@ -161,9 +161,9 @@ class SolverImpl(up.solvers.Solver):
             u = pytamer.tamer_expr_make_le(self._env, d, upper)
         return pytamer.tamer_expr_make_and(self._env, l, u)
 
-    def _convert_simulated_effects(self, converter: Converter, problem: 'up.model.Problem',
-                                   action: 'up.model.Action', timing: 'up.model.Timing',
-                                   sim_eff: 'up.model.SimulatedEffects') -> pytamer.tamer_simulated_effects:
+    def _convert_simulated_effect(self, converter: Converter, problem: 'up.model.Problem',
+                                  action: 'up.model.Action', timing: 'up.model.Timing',
+                                  sim_eff: 'up.model.SimulatedEffect') -> pytamer.tamer_simulated_effect:
         fluents = [converter.convert(x) for x in sim_eff.fluents]
         def f(ts: pytamer.tamer_classical_state,
               interpretation: pytamer.tamer_interpretation,
@@ -177,7 +177,7 @@ class SolverImpl(up.solvers.Solver):
             vec = sim_eff.function(problem, s, actual_params_dict)
             for x in vec:
                 pytamer.tamer_vector_add_expr(res, converter.convert(x))
-        return pytamer.tamer_simulated_effects_new(self._convert_timing(timing), fluents, f);
+        return pytamer.tamer_simulated_effect_new(self._convert_timing(timing), fluents, f);
 
     def _convert_action(self, problem: 'up.model.Problem', action: 'up.model.Action',
                         fluents_map: Dict['up.model.Fluent', pytamer.tamer_fluent],
@@ -206,10 +206,10 @@ class SolverImpl(up.solvers.Solver):
             expr = pytamer.tamer_expr_make_assign(self._env, pytamer.tamer_expr_make_duration_anchor(self._env),
                                                   pytamer.tamer_expr_make_integer_constant(self._env, 1))
             expressions.append(expr)
-            se = action.simulated_effects
+            se = action.simulated_effect
             if se is not None:
-                simulated_effects.append(self._convert_simulated_effects(converter, problem, action,
-                                                                         up.model.StartTiming(), se))
+                simulated_effects.append(self._convert_simulated_effect(converter, problem, action,
+                                                                        up.model.StartTiming(), se))
         elif isinstance(action, up.model.DurativeAction):
             for i, lc in action.conditions.items():
                 for c in lc:
@@ -227,7 +227,7 @@ class SolverImpl(up.solvers.Solver):
                                                                        ass)
                     expressions.append(expr)
             for t, se in action.simulated_effects.items():
-                simulated_effects.append(self._convert_simulated_effects(converter, problem, action, t, se))
+                simulated_effects.append(self._convert_simulated_effect(converter, problem, action, t, se))
             expressions.append(self._convert_duration(converter, action.duration))
         else:
             raise NotImplementedError
