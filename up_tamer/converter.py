@@ -17,11 +17,13 @@ import unified_planning as up
 from unified_planning.model import FNode
 from unified_planning.walkers import DagWalker
 import pytamer # type: ignore
+from fractions import Fraction
 from typing import Dict, List
 
 
 class Converter(DagWalker):
     def __init__(self, env: pytamer.tamer_env,
+                 problem: 'up.model.Problem',
                  fluents: Dict['up.model.Fluent', pytamer.tamer_fluent] = {},
                  instances: Dict['up.model.Object', pytamer.tamer_instance] = {},
                  parameters: Dict['up.model.Parameter', pytamer.tamer_param]={}):
@@ -30,10 +32,31 @@ class Converter(DagWalker):
         self._fluents = fluents
         self._instances = instances
         self._parameters = parameters
+        self._expr_manager = problem.env.expression_manager
+        self._objects = {}
+        for ut in problem.user_types:
+            for obj in problem.objects(ut):
+                self._objects[obj.name] = obj
 
     def convert(self, expression: 'FNode') -> pytamer.tamer_expr:
         """Converts the given expression."""
         return self.walk(expression)
+
+    def convert_back(self, expression: pytamer.tamer_expr) -> 'FNode':
+        if pytamer.tamer_expr_is_boolean_constant(self._env, expression) == 1:
+            res = self._expr_manager.Bool(pytamer.tamer_expr_get_boolean_constant(self._env, expression) == 1)
+        elif pytamer.tamer_expr_is_instance_reference(self._env, expression) == 1:
+            i = pytamer.tamer_expr_get_instance(self._env, expression)
+            res = self._expr_manager.ObjectExp(self._objects[pytamer.tamer_instance_get_name(i)])
+        elif pytamer.tamer_expr_is_integer_constant(self._env, expression) == 1:
+            i = pytamer.tamer_expr_get_integer_constant(self._env, expression)
+            res = self._expr_manager.Int(i)
+        elif pytamer.tamer_expr_is_rational_constant(self._env, expression) == 1:
+            n, d = pytamer.tamer_expr_get_rational_constant(self._env, expression)
+            res = self._expr_manager.Real(Fraction(n, d))
+        else:
+            raise NotImplementedError
+        return res
 
     def walk_and(self, expression: 'FNode',
                  args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
