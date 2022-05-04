@@ -12,4 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .solver import SolverImpl
+import subprocess
+import re
+
+#from .solver import SolverImpl
+
+
+VERSION = (0, 0, 1)
+__version__ = ".".join(str(x) for x in VERSION)
+
+try:
+    git_version = subprocess.check_output(["git", "describe", "--tags",
+                                           "--dirty=-wip"],
+                                          stderr=subprocess.STDOUT)
+    output = git_version.strip().decode('ascii')
+    data = output.split("-")
+    tag = data[0]
+    match = re.match(r'^v(\d+)\.(\d)+\.(\d)$', tag)
+    if match is not None:
+        MAJOR, MINOR, REL = tuple(int(x) for x in match.groups())
+
+    try:
+        COMMITS = int(data[1])
+    except ValueError:
+        COMMITS = 0
+
+    if data[-1] == 'wip':
+        if COMMITS == 0:
+            VERSION = (MAJOR, MINOR, REL, 'post', 1) #type: ignore
+            __version__ = f'{MAJOR}.{MINOR}.{REL}.post1'
+        else:
+            VERSION = (MAJOR, MINOR, REL, COMMITS, 'post', 1) #type: ignore
+            __version__ = f'{MAJOR}.{MINOR}.{REL}.{COMMITS}.post1'
+    else:
+        VERSION = (MAJOR, MINOR, REL, COMMITS, 'dev', 1) #type: ignore
+        __version__ = f'{MAJOR}.{MINOR}.{REL}.{COMMITS}.dev1'
+except Exception as ex:
+    pass
