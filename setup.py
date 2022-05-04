@@ -18,7 +18,6 @@ long_description=\
 setup(name='up_tamer',
       version=up_tamer.__version__,
       description='up_tamer',
-      long_description=long_description,
       author='FBK Tamer Development Team',
       author_email='tamer@fbk.eu',
       url='https://tamer.fbk.eu',
