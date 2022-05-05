@@ -389,7 +389,7 @@ class SolverImpl(up.solvers.Solver):
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
         value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
-        return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID)
+        return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     @staticmethod
     def supports(problem_kind: 'ProblemKind') -> bool:
