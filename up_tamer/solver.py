@@ -12,15 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import warnings
 import unified_planning as up
 import pytamer # type: ignore
 from unified_planning.model import ProblemKind
-from unified_planning.solvers import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus
+from unified_planning.solvers import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus, Credits
 from up_tamer.converter import Converter
 from fractions import Fraction
 from typing import IO, Callable, Optional, Dict, List, Tuple
 
+
+
+credits = Credits('Fondazione Bruno Kessler',
+                  'insert_mail',
+                  'https://github.com/aiplan4eu/tamer-upf',
+                  'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface'
+                )
 
 class TState(up.model.State):
     def __init__(self, ts: pytamer.tamer_state,
@@ -418,6 +426,13 @@ class SolverImpl(up.solvers.Solver):
     @staticmethod
     def is_plan_validator() -> bool:
         return True
+
+    @staticmethod
+    def credits(stream: Optional[IO[str]] = sys.stdout, full_credits: bool = False):
+        if stream is not None:
+            stream.write(f'CREDITS\n')
+            credits.write_credits(stream, full_credits)
+            stream.write('END OF CREDITS\n\n')
 
     def destroy(self):
         pass
