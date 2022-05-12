@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import sys
 import warnings
 import unified_planning as up
@@ -24,10 +25,12 @@ from typing import IO, Callable, Optional, Dict, List, Tuple
 
 
 
-credits = Credits('Fondazione Bruno Kessler',
+credits = Credits('Tamer solver & validator',
+                  'Fondazione Bruno Kessler',
                   'insert_mail',
                   'https://github.com/aiplan4eu/tamer-upf',
-                  'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface'
+                  'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface',
+                  'insert_long_description'
                 )
 
 class TState(up.model.State):
@@ -400,7 +403,7 @@ class SolverImpl(up.solvers.Solver):
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     @staticmethod
-    def supports(problem_kind: 'ProblemKind') -> bool:
+    def supported_kind() -> ProblemKind:
         supported_kind = ProblemKind()
         supported_kind.set_problem_class('ACTION_BASED') # type: ignore
         supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
@@ -417,7 +420,11 @@ class SolverImpl(up.solvers.Solver):
         supported_kind.set_fluents_type('NUMERIC_FLUENTS') # type: ignore
         supported_kind.set_fluents_type('OBJECT_FLUENTS') # type: ignore
         supported_kind.set_simulated_entities('SIMULATED_EFFECTS') # type: ignore
-        return problem_kind <= supported_kind
+        return supported_kind
+
+    @staticmethod
+    def supports(problem_kind: 'up.model.ProblemKind') -> bool:
+        return problem_kind <= SolverImpl.supported_kind()
 
     @staticmethod
     def is_oneshot_planner() -> bool:
@@ -430,9 +437,7 @@ class SolverImpl(up.solvers.Solver):
     @staticmethod
     def credits(stream: Optional[IO[str]] = sys.stdout, full_credits: bool = False):
         if stream is not None:
-            stream.write('CREDITS\n')
             credits.write_credits(stream, full_credits)
-            stream.write('END OF CREDITS\n\n')
 
     def destroy(self):
         pass
