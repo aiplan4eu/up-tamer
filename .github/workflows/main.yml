@@ -1,0 +1,30 @@
+name: CD
+
+on: push
+
+jobs:
+  deploy-pypi:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' # We only deploy on master commits
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@master
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Make distrib
+      run: |
+        python3 -m pip install wheel
+        bash make_distrib.sh
+
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
