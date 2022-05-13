@@ -16,7 +16,7 @@ import warnings
 import unified_planning as up
 import pytamer # type: ignore
 from unified_planning.model import ProblemKind
-from unified_planning.solvers import PlanGenerationResultStatus
+from unified_planning.solvers import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus
 from up_tamer.converter import Converter
 from fractions import Fraction
 from typing import IO, Callable, Optional, Dict, List, Tuple
@@ -381,14 +381,15 @@ class SolverImpl(up.solvers.Solver):
             pytamer.tamer_ttplan_add_step(ttplan, step)
         return ttplan
 
-    def validate(self, problem: 'up.model.Problem', plan: 'up.plan.Plan') -> bool:
+    def validate(self, problem: 'up.model.Problem', plan: 'up.plan.Plan') -> 'up.solvers.results.ValidationResult':
         if not self.supports(problem.kind):
             raise up.exceptions.UPUsageError('Tamer cannot validate this kind of problem!')
         if plan is None:
             raise up.exceptions.UPUsageError('Tamer cannot validate an empty plan!')
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
-        return pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
+        value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
+        return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     @staticmethod
     def supports(problem_kind: 'ProblemKind') -> bool:
