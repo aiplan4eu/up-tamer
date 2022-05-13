@@ -3,8 +3,9 @@ name: CD
 on: push
 
 jobs:
-  deploy-test-pypi:
+  deploy-pypi:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' # We only deploy on master commits
 
     steps:
     - name: Checkout repo
@@ -22,9 +23,8 @@ jobs:
         python3 -m pip install wheel
         bash make_distrib.sh
 
-    - name: Upload to TestPyPI
+    - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
-        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        repository_url: https://test.pypi.org/legacy/
+        password: ${{ secrets.PYPI_API_TOKEN }}
