@@ -15,10 +15,8 @@
 import subprocess
 import re
 
-#from .solver import SolverImpl
 
-
-VERSION = (0, 0, 1)
+VERSION = (0, 1, 0)
 __version__ = ".".join(str(x) for x in VERSION)
 
 try:
