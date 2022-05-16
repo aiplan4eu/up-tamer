@@ -394,6 +394,7 @@ class SolverImpl(up.solvers.Solver):
     @staticmethod
     def supports(problem_kind: 'ProblemKind') -> bool:
         supported_kind = ProblemKind()
+        supported_kind.set_problem_class('ACTION_BASED') # type: ignore
         supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
         supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS') # type: ignore
         supported_kind.set_time('TIMED_EFFECT') # type: ignore
