@@ -29,9 +29,9 @@ credits = Credits('Tamer',
                   'FBK Tamer Development Team',
                   'tamer@fbk.eu',
                   'https://tamer.fbk.eu',
-                  'Apache 2.0',
-                  'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface',
-                  'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface'
+                  'Free for Educational Use',
+                  'Tamer offers the capability to generate a plan for classical, numerical and temporal problems.\nFor those kind of problems tamer also offers the possibility of validating a submitted plan.',
+                  'Tamer offers the capability to generate a plan for classical, numerical and temporal problems.\nFor those kind of problems tamer also offers the possibility of validating a submitted plan.\nYou can find all the related publications here: https://tamer.fbk.eu/publications/'
                 )
 
 class TState(up.model.State):
