@@ -25,10 +25,11 @@ from typing import IO, Callable, Optional, Dict, List, Tuple
 
 
 
-credits = Credits('Tamer solver & validator',
+credits = Credits('Tamer',
                   'Fondazione Bruno Kessler',
                   'insert_mail',
                   'https://github.com/aiplan4eu/tamer-upf',
+                  'Apache 2.0',
                   'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface',
                   'insert_long_description'
                 )
@@ -434,10 +435,9 @@ class SolverImpl(up.solvers.Solver):
     def is_plan_validator() -> bool:
         return True
 
-    @staticmethod
-    def credits(stream: Optional[IO[str]] = sys.stdout, full_credits: bool = False):
-        if stream is not None:
-            credits.write_credits(stream, full_credits)
+    @up.solvers.solver.staticproperty
+    def credits() -> Optional[up.solvers.Credits]: # type: ignore
+        return credits
 
     def destroy(self):
         pass
