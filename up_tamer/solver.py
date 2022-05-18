@@ -26,12 +26,12 @@ from typing import IO, Callable, Optional, Dict, List, Tuple
 
 
 credits = Credits('Tamer',
-                  'Fondazione Bruno Kessler',
-                  'insert_mail',
-                  'https://github.com/aiplan4eu/tamer-upf',
+                  'FBK Tamer Development Team',
+                  'tamer@fbk.eu',
+                  'https://tamer.fbk.eu',
                   'Apache 2.0',
                   'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface',
-                  'insert_long_description'
+                  'Tamer solver and validator, more information can be found at the following link: https://www.ai4europe.eu/research/ai-catalog/tamer-unified-planning-interface'
                 )
 
 class TState(up.model.State):
