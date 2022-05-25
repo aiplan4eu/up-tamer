@@ -436,7 +436,7 @@ class SolverImpl(up.solvers.Solver):
         return True
 
     @staticmethod
-    def get_credits(**kwargs) -> Optional[up.solvers.Credits]: # type: ignore
+    def get_credits(**kwargs) -> Optional[up.solvers.Credits]:
         return credits
 
     def destroy(self):
