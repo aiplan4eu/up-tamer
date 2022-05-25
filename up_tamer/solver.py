@@ -288,7 +288,7 @@ class SolverImpl(up.solvers.Solver):
         return pytamer.tamer_problem_new(self._env, actions, fluents, [], instances, user_types, expressions)
 
     def _to_up_plan(self, problem: 'up.model.Problem',
-                    ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['up.plans.Plan']:
+                    ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['up.plan.Plan']:
         if ttplan is None:
             return None
         converter = Converter(self._env, problem)
@@ -304,11 +304,11 @@ class SolverImpl(up.solvers.Solver):
             params = []
             for p in pytamer.tamer_ttplan_step_get_parameters(s):
                 params.append(converter.convert_back(p))
-            actions.append((start, up.plans.ActionInstance(action, tuple(params)), duration))
+            actions.append((start, up.plan.ActionInstance(action, tuple(params)), duration))
         if problem.kind.has_continuous_time(): # type: ignore
-            return up.plans.TimeTriggeredPlan(actions)
+            return up.plan.TimeTriggeredPlan(actions)
         else:
-            return up.plans.SequentialPlan([a[1] for a in actions])
+            return up.plan.SequentialPlan([a[1] for a in actions])
 
     def _solve_classical_problem(self, tproblem: pytamer.tamer_problem) -> Optional[pytamer.tamer_ttplan]:
         potplan = pytamer.tamer_do_tsimple_planning(tproblem)
@@ -341,7 +341,7 @@ class SolverImpl(up.solvers.Solver):
         plan = self._to_up_plan(problem, ttplan)
         return up.solvers.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
 
-    def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plans.Plan') -> pytamer.tamer_ttplan:
+    def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plan.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
         for a in pytamer.tamer_problem_get_actions(tproblem):
             actions_map[pytamer.tamer_action_get_name(a)] = a
@@ -349,10 +349,10 @@ class SolverImpl(up.solvers.Solver):
         for i in pytamer.tamer_problem_get_instances(tproblem):
             instances_map[pytamer.tamer_instance_get_name(i)] = i
         ttplan = pytamer.tamer_ttplan_new(self._env)
-        steps: List[Tuple[Fraction, 'up.plans.ActionInstance', Optional[Fraction]]] = []
-        if isinstance(plan, up.plans.SequentialPlan):
+        steps: List[Tuple[Fraction, 'up.plan.ActionInstance', Optional[Fraction]]] = []
+        if isinstance(plan, up.plan.SequentialPlan):
             steps = [(Fraction(i*2), a, Fraction(1)) for i, a in enumerate(plan.actions)]
-        elif isinstance(plan, up.plans.TimeTriggeredPlan):
+        elif isinstance(plan, up.plan.TimeTriggeredPlan):
             steps = plan.actions
         else:
             raise NotImplementedError
@@ -381,7 +381,7 @@ class SolverImpl(up.solvers.Solver):
             pytamer.tamer_ttplan_add_step(ttplan, step)
         return ttplan
 
-    def validate(self, problem: 'up.model.Problem', plan: 'up.plans.Plan') -> 'up.solvers.results.ValidationResult':
+    def validate(self, problem: 'up.model.Problem', plan: 'up.plan.Plan') -> 'up.solvers.results.ValidationResult':
         if not self.supports(problem.kind):
             raise up.exceptions.UPUsageError('Tamer cannot validate this kind of problem!')
         if plan is None:
