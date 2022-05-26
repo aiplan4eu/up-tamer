@@ -12,15 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import sys
 import warnings
 import unified_planning as up
 import pytamer # type: ignore
 from unified_planning.model import ProblemKind
-from unified_planning.solvers import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus
+from unified_planning.solvers import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus, Credits
 from up_tamer.converter import Converter
 from fractions import Fraction
 from typing import IO, Callable, Optional, Dict, List, Tuple
 
+
+
+credits = Credits('Tamer',
+                  'FBK Tamer Development Team',
+                  'tamer@fbk.eu',
+                  'https://tamer.fbk.eu',
+                  'Free for Educational Use',
+                  'Tamer offers the capability to generate a plan for classical, numerical and temporal problems.\nFor those kind of problems tamer also offers the possibility of validating a submitted plan.',
+                  'Tamer offers the capability to generate a plan for classical, numerical and temporal problems.\nFor those kind of problems tamer also offers the possibility of validating a submitted plan.\nYou can find all the related publications here: https://tamer.fbk.eu/publications/'
+                )
 
 class TState(up.model.State):
     def __init__(self, ts: pytamer.tamer_state,
@@ -392,7 +404,7 @@ class SolverImpl(up.solvers.Solver):
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     @staticmethod
-    def supports(problem_kind: 'ProblemKind') -> bool:
+    def supported_kind() -> ProblemKind:
         supported_kind = ProblemKind()
         supported_kind.set_problem_class('ACTION_BASED') # type: ignore
         supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
@@ -409,7 +421,11 @@ class SolverImpl(up.solvers.Solver):
         supported_kind.set_fluents_type('NUMERIC_FLUENTS') # type: ignore
         supported_kind.set_fluents_type('OBJECT_FLUENTS') # type: ignore
         supported_kind.set_simulated_entities('SIMULATED_EFFECTS') # type: ignore
-        return problem_kind <= supported_kind
+        return supported_kind
+
+    @staticmethod
+    def supports(problem_kind: 'up.model.ProblemKind') -> bool:
+        return problem_kind <= SolverImpl.supported_kind()
 
     @staticmethod
     def is_oneshot_planner() -> bool:
@@ -418,6 +434,10 @@ class SolverImpl(up.solvers.Solver):
     @staticmethod
     def is_plan_validator() -> bool:
         return True
+
+    @staticmethod
+    def get_credits(**kwargs) -> Optional[up.solvers.Credits]:
+        return credits
 
     def destroy(self):
         pass
