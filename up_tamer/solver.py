@@ -365,7 +365,7 @@ class SolverImpl(up.solvers.Solver):
         if isinstance(plan, up.plans.SequentialPlan):
             steps = [(Fraction(i*2), a, Fraction(1)) for i, a in enumerate(plan.actions)]
         elif isinstance(plan, up.plans.TimeTriggeredPlan):
-            steps = plan.actions
+            steps = plan.timed_actions
         else:
             raise NotImplementedError
         for start, ai, duration in steps:
