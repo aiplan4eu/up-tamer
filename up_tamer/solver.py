@@ -318,9 +318,9 @@ class SolverImpl(up.solvers.Solver):
                 params.append(converter.convert_back(p))
             actions.append((start, up.plans.ActionInstance(action, tuple(params)), duration))
         if problem.kind.has_continuous_time(): # type: ignore
-            return up.plans.TimeTriggeredPlan(actions)
+            return up.plans.TimeTriggeredPlan(actions, problem.env)
         else:
-            return up.plans.SequentialPlan([a[1] for a in actions])
+            return up.plans.SequentialPlan([a[1] for a in actions], problem.env)
 
     def _solve_classical_problem(self, tproblem: pytamer.tamer_problem) -> Optional[pytamer.tamer_ttplan]:
         potplan = pytamer.tamer_do_tsimple_planning(tproblem)
