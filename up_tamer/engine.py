@@ -51,9 +51,9 @@ class TState(up.model.State):
         return cr
 
 
-class SolverImpl(up.engines.mixins.OneshotPlannerMixin,
-                 up.engines.mixins.PlanValidatorMixin,
-                 up.engines.Engine):
+class EngineImpl(up.engines.Engine,
+                 up.engines.mixins.OneshotPlannerMixin,
+                 up.engines.mixins.PlanValidatorMixin):
 
     def __init__(self, weight: Optional[float] = None,
                  heuristic: Optional[str] = None, **options):
@@ -97,7 +97,7 @@ class SolverImpl(up.engines.mixins.OneshotPlannerMixin,
 
     @staticmethod
     def supports(problem_kind: 'up.model.ProblemKind') -> bool:
-        return problem_kind <= SolverImpl.supported_kind()
+        return problem_kind <= EngineImpl.supported_kind()
 
     @staticmethod
     def satisfies(optimality_guarantee: Union[up.engines.OptimalityGuarantee, str]) -> bool:
