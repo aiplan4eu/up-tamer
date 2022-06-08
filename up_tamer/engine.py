@@ -23,7 +23,7 @@ from unified_planning.model import ProblemKind
 from unified_planning.engines import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus, Credits
 from up_tamer.converter import Converter
 from fractions import Fraction
-from typing import IO, Callable, Optional, Dict, List, Tuple, Union
+from typing import IO, Callable, Optional, Dict, List, Tuple, Union, cast
 
 
 
@@ -100,16 +100,17 @@ class EngineImpl(up.engines.Engine,
         return problem_kind <= EngineImpl.supported_kind()
 
     @staticmethod
-    def satisfies(optimality_guarantee: Union[up.engines.OptimalityGuarantee, str]) -> bool:
+    def satisfies(optimality_guarantee: up.engines.OptimalityGuarantee) -> bool:
         return False
 
     @staticmethod
     def get_credits(**kwargs) -> Optional[up.engines.Credits]:
         return credits
 
-    def validate(self, problem: 'up.model.Problem', plan: 'up.plans.Plan') -> 'up.engines.results.ValidationResult':
+    def validate(self, problem: 'up.model.AbstractProblem', plan: 'up.plans.Plan') -> 'up.engines.results.ValidationResult':
         if not self.supports(problem.kind):
             raise up.exceptions.UPUsageError('Tamer cannot validate this kind of problem!')
+        assert isinstance(problem, up.model.Problem)
         if plan is None:
             raise up.exceptions.UPUsageError('Tamer cannot validate an empty plan!')
         tproblem = self._convert_problem(problem)
@@ -117,12 +118,13 @@ class EngineImpl(up.engines.Engine,
         value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
-    def solve(self, problem: 'up.model.Problem',
+    def solve(self, problem: 'up.model.AbstractProblem',
               callback: Optional[Callable[['up.engines.PlanGenerationResult'], None]] = None,
               timeout: Optional[float] = None,
               output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
         if not self.supports(problem.kind):
             raise up.exceptions.UPUsageError('Tamer cannot solve this kind of problem!')
+        assert isinstance(problem, up.model.Problem)
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
         if output_stream is not None:
@@ -148,27 +150,29 @@ class EngineImpl(up.engines.Engine,
         elif typename.is_user_type():
             ttype = user_types_map[typename]
         elif typename.is_int_type():
-            lb = typename.lower_bound # type: ignore
-            ub = typename.upper_bound # type: ignore
-            if lb is None and ub is None:
+            typename = cast(up.model.types._IntType, typename)
+            ilb = typename.lower_bound
+            iub = typename.upper_bound
+            if ilb is None and iub is None:
                 ttype = pytamer.tamer_integer_type(self._env)
-            elif lb is None:
-                ttype = pytamer.tamer_integer_type_lb(self._env, lb)
-            elif ub is None:
-                ttype = pytamer.tamer_integer_type_ub(self._env, ub)
+            elif ilb is None:
+                ttype = pytamer.tamer_integer_type_lb(self._env, ilb)
+            elif iub is None:
+                ttype = pytamer.tamer_integer_type_ub(self._env, iub)
             else:
-                ttype = pytamer.tamer_integer_type_lub(self._env, lb, ub)
+                ttype = pytamer.tamer_integer_type_lub(self._env, ilb, iub)
         elif typename.is_real_type():
-            lb = typename.lower_bound # type: ignore
-            ub = typename.upper_bound # type: ignore
-            if lb is None and ub is None:
+            typename = cast(up.model.types._RealType, typename)
+            flb = typename.lower_bound
+            fub = typename.upper_bound
+            if flb is None and fub is None:
                 ttype = pytamer.tamer_rational_type(self._env)
-            elif lb is None:
-                ttype = pytamer.tamer_rational_type_lb(self._env, lb)
-            elif ub is None:
-                ttype = pytamer.tamer_rational_type_ub(self._env, ub)
+            elif flb is None:
+                ttype = pytamer.tamer_rational_type_lb(self._env, flb)
+            elif fub is None:
+                ttype = pytamer.tamer_rational_type_ub(self._env, fub)
             else:
-                ttype = pytamer.tamer_rational_type_lub(self._env, lb, ub)
+                ttype = pytamer.tamer_rational_type_lub(self._env, flb, fub)
         else:
             raise NotImplementedError
         return ttype
@@ -322,7 +326,7 @@ class EngineImpl(up.engines.Engine,
         instances = []
         instances_map = {}
         for ut in problem.user_types:
-            name = ut.name # type: ignore
+            name = cast(up.model.types._UserType, ut).name
             new_ut = pytamer.tamer_user_type_new(self._env, name)
             user_types.append(new_ut)
             user_types_map[ut] = new_ut
