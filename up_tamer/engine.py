@@ -37,7 +37,7 @@ credits = Credits('Tamer',
                   'Tamer offers the capability to generate a plan for classical, numerical and temporal problems.\nFor those kind of problems tamer also offers the possibility of validating a submitted plan.\nYou can find all the related publications here: https://tamer.fbk.eu/publications/'
                 )
 
-class TState(up.model.State):
+class TState(up.model.ROState):
     def __init__(self, ts: pytamer.tamer_state,
                  interpretation: pytamer.tamer_interpretation,
                  converter: Converter):
