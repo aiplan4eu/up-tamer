@@ -17,11 +17,13 @@ import sys
 import warnings
 import unified_planning as up
 import pytamer # type: ignore
+import unified_planning.engines
+import unified_planning.engines.mixins
 from unified_planning.model import ProblemKind
-from unified_planning.solvers import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus, Credits
+from unified_planning.engines import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus, Credits
 from up_tamer.converter import Converter
 from fractions import Fraction
-from typing import IO, Callable, Optional, Dict, List, Tuple
+from typing import IO, Callable, Optional, Dict, List, Tuple, Union, cast
 
 
 
@@ -49,7 +51,10 @@ class TState(up.model.State):
         return cr
 
 
-class SolverImpl(up.solvers.Solver):
+class EngineImpl(up.engines.Engine,
+                 up.engines.mixins.OneshotPlannerMixin,
+                 up.engines.mixins.PlanValidatorMixin):
+
     def __init__(self, weight: Optional[float] = None,
                  heuristic: Optional[str] = None, **options):
         self._env = pytamer.tamer_env_new()
@@ -70,6 +75,74 @@ class SolverImpl(up.solvers.Solver):
     def name(self) -> str:
         return 'Tamer'
 
+    @staticmethod
+    def supported_kind() -> ProblemKind:
+        supported_kind = ProblemKind()
+        supported_kind.set_problem_class('ACTION_BASED') # type: ignore
+        supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
+        supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS') # type: ignore
+        supported_kind.set_time('TIMED_EFFECT') # type: ignore
+        supported_kind.set_time('TIMED_GOALS') # type: ignore
+        supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
+        supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
+        supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
+        supported_kind.set_typing('FLAT_TYPING') # type: ignore
+        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
+        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
+        supported_kind.set_conditions_kind('EQUALITY') # type: ignore
+        supported_kind.set_fluents_type('NUMERIC_FLUENTS') # type: ignore
+        supported_kind.set_fluents_type('OBJECT_FLUENTS') # type: ignore
+        supported_kind.set_simulated_entities('SIMULATED_EFFECTS') # type: ignore
+        return supported_kind
+
+    @staticmethod
+    def supports(problem_kind: 'up.model.ProblemKind') -> bool:
+        return problem_kind <= EngineImpl.supported_kind()
+
+    @staticmethod
+    def satisfies(optimality_guarantee: up.engines.OptimalityGuarantee) -> bool:
+        return False
+
+    @staticmethod
+    def get_credits(**kwargs) -> Optional[up.engines.Credits]:
+        return credits
+
+    def validate(self, problem: 'up.model.AbstractProblem', plan: 'up.plans.Plan') -> 'up.engines.results.ValidationResult':
+        if not self.supports(problem.kind):
+            raise up.exceptions.UPUsageError('Tamer cannot validate this kind of problem!')
+        assert isinstance(problem, up.model.Problem)
+        if plan is None:
+            raise up.exceptions.UPUsageError('Tamer cannot validate an empty plan!')
+        tproblem = self._convert_problem(problem)
+        tplan = self._convert_plan(tproblem, plan)
+        value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
+        return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
+
+    def solve(self, problem: 'up.model.AbstractProblem',
+              callback: Optional[Callable[['up.engines.PlanGenerationResult'], None]] = None,
+              timeout: Optional[float] = None,
+              output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
+        if not self.supports(problem.kind):
+            raise up.exceptions.UPUsageError('Tamer cannot solve this kind of problem!')
+        assert isinstance(problem, up.model.Problem)
+        if timeout is not None:
+            warnings.warn('Tamer does not support timeout.', UserWarning)
+        if output_stream is not None:
+            warnings.warn('Tamer does not support output stream.', UserWarning)
+        tproblem = self._convert_problem(problem)
+        if problem.kind.has_continuous_time(): # type: ignore
+            if self._heuristic is not None:
+                pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
+            ttplan = pytamer.tamer_do_ftp_planning(tproblem)
+            if pytamer.tamer_ttplan_is_error(ttplan) == 1:
+                ttplan = None
+        else:
+            if self._heuristic is not None:
+                pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
+            ttplan = self._solve_classical_problem(tproblem)
+        plan = self._to_up_plan(problem, ttplan)
+        return up.engines.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
+
     def _convert_type(self, typename: 'up.model.Type',
                       user_types_map: Dict['up.model.Type', pytamer.tamer_type]) -> pytamer.tamer_type:
         if typename.is_bool_type():
@@ -77,27 +150,29 @@ class SolverImpl(up.solvers.Solver):
         elif typename.is_user_type():
             ttype = user_types_map[typename]
         elif typename.is_int_type():
-            lb = typename.lower_bound # type: ignore
-            ub = typename.upper_bound # type: ignore
-            if lb is None and ub is None:
+            typename = cast(up.model.types._IntType, typename)
+            ilb = typename.lower_bound
+            iub = typename.upper_bound
+            if ilb is None and iub is None:
                 ttype = pytamer.tamer_integer_type(self._env)
-            elif lb is None:
-                ttype = pytamer.tamer_integer_type_lb(self._env, lb)
-            elif ub is None:
-                ttype = pytamer.tamer_integer_type_ub(self._env, ub)
+            elif ilb is None:
+                ttype = pytamer.tamer_integer_type_lb(self._env, ilb)
+            elif iub is None:
+                ttype = pytamer.tamer_integer_type_ub(self._env, iub)
             else:
-                ttype = pytamer.tamer_integer_type_lub(self._env, lb, ub)
+                ttype = pytamer.tamer_integer_type_lub(self._env, ilb, iub)
         elif typename.is_real_type():
-            lb = typename.lower_bound # type: ignore
-            ub = typename.upper_bound # type: ignore
-            if lb is None and ub is None:
+            typename = cast(up.model.types._RealType, typename)
+            flb = typename.lower_bound
+            fub = typename.upper_bound
+            if flb is None and fub is None:
                 ttype = pytamer.tamer_rational_type(self._env)
-            elif lb is None:
-                ttype = pytamer.tamer_rational_type_lb(self._env, lb)
-            elif ub is None:
-                ttype = pytamer.tamer_rational_type_ub(self._env, ub)
+            elif flb is None:
+                ttype = pytamer.tamer_rational_type_lb(self._env, flb)
+            elif fub is None:
+                ttype = pytamer.tamer_rational_type_ub(self._env, fub)
             else:
-                ttype = pytamer.tamer_rational_type_lub(self._env, lb, ub)
+                ttype = pytamer.tamer_rational_type_lub(self._env, flb, fub)
         else:
             raise NotImplementedError
         return ttype
@@ -251,7 +326,7 @@ class SolverImpl(up.solvers.Solver):
         instances = []
         instances_map = {}
         for ut in problem.user_types:
-            name = ut.name # type: ignore
+            name = cast(up.model.types._UserType, ut).name
             new_ut = pytamer.tamer_user_type_new(self._env, name)
             user_types.append(new_ut)
             user_types_map[ut] = new_ut
@@ -329,30 +404,6 @@ class SolverImpl(up.solvers.Solver):
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
         return ttplan
 
-    def solve(self, problem: 'up.model.Problem',
-              callback: Optional[Callable[['up.solvers.PlanGenerationResult'], None]] = None,
-              timeout: Optional[float] = None,
-              output_stream: Optional[IO[str]] = None) -> 'up.solvers.results.PlanGenerationResult':
-        if not self.supports(problem.kind):
-            raise up.exceptions.UPUsageError('Tamer cannot solve this kind of problem!')
-        if timeout is not None:
-            warnings.warn('Tamer does not support timeout.', UserWarning)
-        if output_stream is not None:
-            warnings.warn('Tamer does not support output stream.', UserWarning)
-        tproblem = self._convert_problem(problem)
-        if problem.kind.has_continuous_time(): # type: ignore
-            if self._heuristic is not None:
-                pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
-            ttplan = pytamer.tamer_do_ftp_planning(tproblem)
-            if pytamer.tamer_ttplan_is_error(ttplan) == 1:
-                ttplan = None
-        else:
-            if self._heuristic is not None:
-                pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
-            ttplan = self._solve_classical_problem(tproblem)
-        plan = self._to_up_plan(problem, ttplan)
-        return up.solvers.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
-
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plans.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
         for a in pytamer.tamer_problem_get_actions(tproblem):
@@ -392,52 +443,3 @@ class SolverImpl(up.solvers.Solver):
                                                  pytamer.tamer_expr_make_true(self._env))
             pytamer.tamer_ttplan_add_step(ttplan, step)
         return ttplan
-
-    def validate(self, problem: 'up.model.Problem', plan: 'up.plans.Plan') -> 'up.solvers.results.ValidationResult':
-        if not self.supports(problem.kind):
-            raise up.exceptions.UPUsageError('Tamer cannot validate this kind of problem!')
-        if plan is None:
-            raise up.exceptions.UPUsageError('Tamer cannot validate an empty plan!')
-        tproblem = self._convert_problem(problem)
-        tplan = self._convert_plan(tproblem, plan)
-        value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
-        return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
-
-    @staticmethod
-    def supported_kind() -> ProblemKind:
-        supported_kind = ProblemKind()
-        supported_kind.set_problem_class('ACTION_BASED') # type: ignore
-        supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
-        supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS') # type: ignore
-        supported_kind.set_time('TIMED_EFFECT') # type: ignore
-        supported_kind.set_time('TIMED_GOALS') # type: ignore
-        supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
-        supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
-        supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
-        supported_kind.set_typing('FLAT_TYPING') # type: ignore
-        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
-        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
-        supported_kind.set_conditions_kind('EQUALITY') # type: ignore
-        supported_kind.set_fluents_type('NUMERIC_FLUENTS') # type: ignore
-        supported_kind.set_fluents_type('OBJECT_FLUENTS') # type: ignore
-        supported_kind.set_simulated_entities('SIMULATED_EFFECTS') # type: ignore
-        return supported_kind
-
-    @staticmethod
-    def supports(problem_kind: 'up.model.ProblemKind') -> bool:
-        return problem_kind <= SolverImpl.supported_kind()
-
-    @staticmethod
-    def is_oneshot_planner() -> bool:
-        return True
-
-    @staticmethod
-    def is_plan_validator() -> bool:
-        return True
-
-    @staticmethod
-    def get_credits(**kwargs) -> Optional[up.solvers.Credits]:
-        return credits
-
-    def destroy(self):
-        pass
