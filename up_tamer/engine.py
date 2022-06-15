@@ -17,6 +17,7 @@ import sys
 import warnings
 import unified_planning as up
 import pytamer # type: ignore
+import unified_planning.plans
 import unified_planning.engines
 import unified_planning.engines.mixins
 from unified_planning.model import ProblemKind
@@ -100,6 +101,10 @@ class EngineImpl(up.engines.Engine,
         return problem_kind <= EngineImpl.supported_kind()
 
     @staticmethod
+    def supports_plan(plan_kind: 'up.plans.PlanKind') -> bool:
+        return plan_kind in [up.plans.PlanKind.SEQUENTIAL_PLAN, up.plans.PlanKind.TIME_TRIGGERED_PLAN]
+
+    @staticmethod
     def satisfies(optimality_guarantee: up.engines.OptimalityGuarantee) -> bool:
         return False
 
@@ -107,23 +112,17 @@ class EngineImpl(up.engines.Engine,
     def get_credits(**kwargs) -> Optional[up.engines.Credits]:
         return credits
 
-    def validate(self, problem: 'up.model.AbstractProblem', plan: 'up.plans.Plan') -> 'up.engines.results.ValidationResult':
-        if not self.supports(problem.kind):
-            raise up.exceptions.UPUsageError('Tamer cannot validate this kind of problem!')
+    def _validate(self, problem: 'up.model.AbstractProblem', plan: 'up.plans.Plan') -> 'up.engines.results.ValidationResult':
         assert isinstance(problem, up.model.Problem)
-        if plan is None:
-            raise up.exceptions.UPUsageError('Tamer cannot validate an empty plan!')
         tproblem = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
         value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
-    def solve(self, problem: 'up.model.AbstractProblem',
-              callback: Optional[Callable[['up.engines.PlanGenerationResult'], None]] = None,
-              timeout: Optional[float] = None,
-              output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
-        if not self.supports(problem.kind):
-            raise up.exceptions.UPUsageError('Tamer cannot solve this kind of problem!')
+    def _solve(self, problem: 'up.model.AbstractProblem',
+               callback: Optional[Callable[['up.engines.PlanGenerationResult'], None]] = None,
+               timeout: Optional[float] = None,
+               output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
         assert isinstance(problem, up.model.Problem)
         if timeout is not None:
             warnings.warn('Tamer does not support timeout.', UserWarning)
