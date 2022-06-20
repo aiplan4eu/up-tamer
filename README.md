@@ -5,7 +5,7 @@ This is the integrator for [Tamer](https://tamer.fbk.eu/), a temporal planner th
 You can install this engine as an extra requirement of the `unified-planning` package: `pip install unified-planning[tamer]`.
 The installation has been tested on the latest versions of ubuntu, windows and macos.
 
-##Default configuration
+## Default configuration
 An heuristic search algorithm described in this [paper](https://ojs.aaai.org//index.php/AAAI/article/view/6553).
 
 ## Planning approaches of UP supported
