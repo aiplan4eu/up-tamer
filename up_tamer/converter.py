@@ -15,7 +15,7 @@
 
 import unified_planning as up
 from unified_planning.model import FNode
-from unified_planning.walkers import DagWalker
+from unified_planning.model.walkers import DagWalker
 import pytamer # type: ignore
 from fractions import Fraction
 from typing import Dict, List
