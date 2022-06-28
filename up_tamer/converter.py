@@ -25,11 +25,13 @@ class Converter(DagWalker):
     def __init__(self, env: pytamer.tamer_env,
                  problem: 'up.model.Problem',
                  fluents: Dict['up.model.Fluent', pytamer.tamer_fluent] = {},
+                 constants: Dict['up.model.Fluent', pytamer.tamer_constant] = {},
                  instances: Dict['up.model.Object', pytamer.tamer_instance] = {},
                  parameters: Dict['up.model.Parameter', pytamer.tamer_param]={}):
         DagWalker.__init__(self)
         self._env = env
         self._fluents = fluents
+        self._constants = constants
         self._instances = instances
         self._parameters = parameters
         self._expr_manager = problem.env.expression_manager
@@ -100,7 +102,11 @@ class Converter(DagWalker):
     def walk_fluent_exp(self, expression: 'FNode',
                         args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         fluent = expression.fluent()
-        return pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent], args)
+        if fluent in self._fluents:
+            return pytamer.tamer_expr_make_fluent_reference(self._env, self._fluents[fluent], args)
+        else:
+            return pytamer.tamer_expr_make_constant_reference(self._env, self._constants[fluent],
+                                                              args, len(args))
 
     def walk_param_exp(self, expression: 'FNode',
                        args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
