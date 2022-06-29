@@ -85,6 +85,7 @@ class EngineImpl(up.engines.Engine,
         supported_kind.set_time('TIMED_EFFECT') # type: ignore
         supported_kind.set_time('TIMED_GOALS') # type: ignore
         supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
+        supported_kind.set_expression_duration('STATIC_FLUENTS_IN_DURATION') # type: ignore
         supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
         supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
@@ -177,8 +178,7 @@ class EngineImpl(up.engines.Engine,
         return ttype
 
     def _convert_fluent(self, fluent: 'up.model.Fluent',
-                        user_types_map: Dict['up.model.Type',
-                                             pytamer.tamer_fluent]) -> pytamer.tamer_fluent:
+                        user_types_map: Dict['up.model.Type', pytamer.tamer_type]) -> pytamer.tamer_fluent:
         typename = fluent.type
         ttype = self._convert_type(typename, user_types_map)
         params = []
@@ -187,6 +187,21 @@ class EngineImpl(up.engines.Engine,
             p = pytamer.tamer_parameter_new(param.name, ptype)
             params.append(p)
         return pytamer.tamer_fluent_new(self._env, fluent.name, ttype, [], params)
+
+    def _convert_constant(self, constant: 'up.model.Fluent',
+                          constants_assignments: List[Tuple[List[pytamer.tamer_expr], pytamer.tamer_expr]],
+                          user_types_map: Dict['up.model.Type', pytamer.tamer_type]) -> pytamer.tamer_constant:
+        typename = constant.type
+        ttype = self._convert_type(typename, user_types_map)
+        params = []
+        for param in constant.signature:
+            ptype = self._convert_type(param.type, user_types_map)
+            p = pytamer.tamer_parameter_new(param.name, ptype)
+            params.append(p)
+        values = pytamer.tamer_function_value_new()
+        for key, value in constants_assignments:
+            pytamer.tamer_function_value_add_assignment(values, key, value)
+        return pytamer.tamer_constant_new(self._env, constant.name, ttype, [], params, values)
 
     def _convert_timing(self, timing: 'up.model.Timing') -> pytamer.tamer_expr:
         k = timing.delay
@@ -267,6 +282,7 @@ class EngineImpl(up.engines.Engine,
 
     def _convert_action(self, problem: 'up.model.Problem', action: 'up.model.Action',
                         fluents_map: Dict['up.model.Fluent', pytamer.tamer_fluent],
+                        constants_map: Dict['up.model.Fluent', pytamer.tamer_constant],
                         user_types_map: Dict['up.model.Type', pytamer.tamer_type],
                         instances_map: Dict['up.model.Object', pytamer.tamer_instance]) -> pytamer.tamer_action:
         params = []
@@ -278,7 +294,7 @@ class EngineImpl(up.engines.Engine,
             params_map[p] = new_p
         expressions = []
         simulated_effects = []
-        converter = Converter(self._env, problem, fluents_map, instances_map, params_map)
+        converter = Converter(self._env, problem, fluents_map, constants_map, instances_map, params_map)
         if isinstance(action, up.model.InstantaneousAction):
             for c in action.preconditions:
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start,
@@ -336,22 +352,42 @@ class EngineImpl(up.engines.Engine,
 
         fluents = []
         fluents_map = {}
+        static_fluents = problem.get_static_fluents()
         for f in problem.fluents:
-            new_f = self._convert_fluent(f, user_types_map)
-            fluents.append(new_f)
-            fluents_map[f] = new_f
+            if f not in static_fluents:
+                new_f = self._convert_fluent(f, user_types_map)
+                fluents.append(new_f)
+                fluents_map[f] = new_f
+
+        expressions = []
+        converter = Converter(self._env, problem, fluents_map, {}, instances_map)
+        constants_assignments = {}
+        for k, v in problem.initial_values.items():
+            if k.fluent() not in static_fluents:
+                ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(k), converter.convert(v))
+                expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start, ass)
+                expressions.append(expr)
+            else:
+                if k.fluent() not in constants_assignments:
+                    constants_assignments[k.fluent()] = []
+                constants_assignments[k.fluent()].append(([converter.convert(ki) for ki in k.args],
+                                                          converter.convert(v)))
+
+        constants = []
+        constants_map = {}
+        for c in static_fluents:
+            new_c = self._convert_constant(c, constants_assignments[c], user_types_map)
+            constants.append(new_c)
+            constants_map[c] = new_c
+
+        converter = Converter(self._env, problem, fluents_map, constants_map, instances_map)
 
         actions = []
         for a in problem.actions:
-            new_a = self._convert_action(problem, a, fluents_map, user_types_map, instances_map)
+            new_a = self._convert_action(problem, a, fluents_map, constants_map,
+                                         user_types_map, instances_map)
             actions.append(new_a)
 
-        expressions = []
-        converter = Converter(self._env, problem, fluents_map, instances_map)
-        for k, v in problem.initial_values.items():
-            ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(k), converter.convert(v))
-            expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start, ass)
-            expressions.append(expr)
         for g in problem.goals:
             expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_end,
                                                                converter.convert(g))
@@ -371,7 +407,7 @@ class EngineImpl(up.engines.Engine,
                                                                    converter.convert(g))
                 expressions.append(expr)
 
-        return pytamer.tamer_problem_new(self._env, actions, fluents, [], instances, user_types, expressions)
+        return pytamer.tamer_problem_new(self._env, actions, fluents, constants, instances, user_types, expressions)
 
     def _to_up_plan(self, problem: 'up.model.Problem',
                     ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['up.plans.Plan']:
