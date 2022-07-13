@@ -94,6 +94,7 @@ class EngineImpl(up.engines.Engine,
         supported_kind.set_expression_duration('FLUENTS_IN_DURATION') # type: ignore
         supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
         supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
+        supported_kind.set_problem_type("SIMPLE_NUMERIC_PLANNING") # type: ignore
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
         supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
