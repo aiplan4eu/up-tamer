@@ -40,12 +40,17 @@ credits = Credits('Tamer',
 class TState(up.model.ROState):
     def __init__(self, ts: pytamer.tamer_state,
                  interpretation: pytamer.tamer_interpretation,
-                 converter: Converter):
+                 converter: Converter,
+                 problem: 'up.model.Problem'):
         self._ts = ts
         self._interpretation = interpretation
         self._converter = converter
+        self._problem = problem
+        self._static_fluents = problem.get_static_fluents()
 
     def get_value(self, f: 'up.model.FNode') -> 'up.model.FNode':
+        if f.fluent() in self._static_fluents:
+            return self._problem.initial_value(f)
         cf = self._converter.convert(f)
         r = pytamer.tamer_state_get_value(self._ts, self._interpretation, cf)
         cr = self._converter.convert_back(r)
@@ -156,9 +161,9 @@ class EngineImpl(up.engines.Engine,
             if ilb is None and iub is None:
                 ttype = pytamer.tamer_integer_type(self._env)
             elif ilb is None:
-                ttype = pytamer.tamer_integer_type_lb(self._env, ilb)
-            elif iub is None:
                 ttype = pytamer.tamer_integer_type_ub(self._env, iub)
+            elif iub is None:
+                ttype = pytamer.tamer_integer_type_lb(self._env, ilb)
             else:
                 ttype = pytamer.tamer_integer_type_lub(self._env, ilb, iub)
         elif typename.is_real_type():
@@ -168,9 +173,9 @@ class EngineImpl(up.engines.Engine,
             if flb is None and fub is None:
                 ttype = pytamer.tamer_rational_type(self._env)
             elif flb is None:
-                ttype = pytamer.tamer_rational_type_lb(self._env, flb)
-            elif fub is None:
                 ttype = pytamer.tamer_rational_type_ub(self._env, fub)
+            elif fub is None:
+                ttype = pytamer.tamer_rational_type_lb(self._env, flb)
             else:
                 ttype = pytamer.tamer_rational_type_lub(self._env, flb, fub)
         else:
@@ -270,7 +275,7 @@ class EngineImpl(up.engines.Engine,
               interpretation: pytamer.tamer_interpretation,
               actual_params: pytamer.tamer_vector_expr,
               res: pytamer.tamer_vector_expr):
-            s = TState(ts, interpretation, converter)
+            s = TState(ts, interpretation, converter, problem)
             actual_params_dict = {}
             for i, p in enumerate(action.parameters):
                 tvalue = pytamer.tamer_vector_get_expr(actual_params, i)
