@@ -91,6 +91,7 @@ class EngineImpl(up.engines.Engine,
         supported_kind.set_time('TIMED_GOALS') # type: ignore
         supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
         supported_kind.set_expression_duration('STATIC_FLUENTS_IN_DURATION') # type: ignore
+        supported_kind.set_expression_duration('FLUENTS_IN_DURATION') # type: ignore
         supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
         supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
