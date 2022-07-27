@@ -463,6 +463,8 @@ class EngineImpl(up.engines.Engine,
         else:
             raise NotImplementedError
         for start, ai, duration in steps:
+            if duration is None:
+                duration = 1
             action = actions_map[ai.action.name]
             params = []
             for p in ai.actual_parameters:
