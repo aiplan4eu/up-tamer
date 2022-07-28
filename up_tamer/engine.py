@@ -214,7 +214,7 @@ class EngineImpl(up.engines.Engine,
     def _convert_timing(self, timing: 'up.model.Timing') -> pytamer.tamer_expr:
         k = timing.delay
         if isinstance(k, int):
-            c = pytamer.tamer_expr_make_integer_constant(self._env, k)
+            c = pytamer.tamer_expr_make_rational_constant(self._env, k, 1)
         elif isinstance(k, float):
             k = Fraction(k)
             c = pytamer.tamer_expr_make_rational_constant(self._env, k.numerator, k.denominator)
