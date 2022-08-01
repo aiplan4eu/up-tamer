@@ -27,7 +27,6 @@ from fractions import Fraction
 from typing import IO, Callable, Optional, Dict, List, Tuple, Union, Set, cast
 
 
-
 credits = Credits('Tamer',
                   'FBK Tamer Development Team',
                   'tamer@fbk.eu',
@@ -136,7 +135,6 @@ class EngineImpl(
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     def _solve(self, problem: 'up.model.AbstractProblem',
-               callback: Optional[Callable[['up.engines.PlanGenerationResult'], None]] = None,
                heuristic: Optional[Callable[["up.model.state.ROState"], Optional[float]]] = None,
                timeout: Optional[float] = None,
                output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
