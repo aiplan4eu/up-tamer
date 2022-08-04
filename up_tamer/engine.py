@@ -57,12 +57,16 @@ class TState(up.model.ROState):
         return cr
 
 
-class EngineImpl(up.engines.Engine,
-                 up.engines.mixins.OneshotPlannerMixin,
-                 up.engines.mixins.PlanValidatorMixin):
+class EngineImpl(
+        up.engines.Engine,
+        up.engines.mixins.OneshotPlannerMixin,
+        up.engines.mixins.PlanValidatorMixin
+    ):
+    """ Implementation of the up-tamer Engine. """
 
     def __init__(self, weight: Optional[float] = None,
                  heuristic: Optional[str] = None, **options):
+        up.engines.Engine.__init__(self)
         self._env = pytamer.tamer_env_new()
         if not weight is None:
             pytamer.tamer_env_set_float_option(self._env, 'weight', weight)
