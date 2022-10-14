@@ -24,7 +24,7 @@ from unified_planning.model import ProblemKind
 from unified_planning.engines import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus, Credits
 from up_tamer.converter import Converter
 from fractions import Fraction
-from typing import IO, Callable, Optional, Dict, List, Tuple, Union, cast
+from typing import IO, Callable, Optional, Dict, List, Tuple, Union, Set, cast
 
 
 
@@ -41,12 +41,13 @@ class TState(up.model.ROState):
     def __init__(self, ts: pytamer.tamer_state,
                  interpretation: pytamer.tamer_interpretation,
                  converter: Converter,
-                 problem: 'up.model.Problem'):
+                 problem: 'up.model.Problem',
+                 static_fluents: Set["up.model.fluent.Fluent"]):
         self._ts = ts
         self._interpretation = interpretation
         self._converter = converter
         self._problem = problem
-        self._static_fluents = problem.get_static_fluents()
+        self._static_fluents = static_fluents
 
     def get_value(self, f: 'up.model.FNode') -> 'up.model.FNode':
         if f.fluent() in self._static_fluents:
@@ -180,11 +181,11 @@ class EngineImpl(
             if flb is None and fub is None:
                 ttype = pytamer.tamer_rational_type(self._env)
             elif flb is None:
-                ttype = pytamer.tamer_rational_type_ub(self._env, fub)
+                ttype = pytamer.tamer_rational_type_ub(self._env, float(fub))
             elif fub is None:
-                ttype = pytamer.tamer_rational_type_lb(self._env, flb)
+                ttype = pytamer.tamer_rational_type_lb(self._env, float(flb))
             else:
-                ttype = pytamer.tamer_rational_type_lub(self._env, flb, fub)
+                ttype = pytamer.tamer_rational_type_lub(self._env, float(flb), float(fub))
         else:
             raise NotImplementedError
         return ttype
@@ -278,11 +279,12 @@ class EngineImpl(
                                   action: 'up.model.Action', timing: 'up.model.Timing',
                                   sim_eff: 'up.model.SimulatedEffect') -> pytamer.tamer_simulated_effect:
         fluents = [converter.convert(x) for x in sim_eff.fluents]
+        static_fluents = problem.get_static_fluents()
         def f(ts: pytamer.tamer_classical_state,
               interpretation: pytamer.tamer_interpretation,
               actual_params: pytamer.tamer_vector_expr,
               res: pytamer.tamer_vector_expr):
-            s = TState(ts, interpretation, converter, problem)
+            s = TState(ts, interpretation, converter, problem, static_fluents)
             actual_params_dict = {}
             for i, p in enumerate(action.parameters):
                 tvalue = pytamer.tamer_vector_get_expr(actual_params, i)

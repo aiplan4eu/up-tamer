@@ -22,7 +22,7 @@ setup(name='up_tamer',
       author_email='tamer@fbk.eu',
       url='https://tamer.fbk.eu',
       packages=['up_tamer'],
-      install_requires=['pytamer==0.1.4'],
+      install_requires=['pytamer==0.1.8'],
       python_requires='>=3.7',
       license='APACHE'
 )
