@@ -68,6 +68,8 @@ class EngineImpl(
     def __init__(self, weight: Optional[float] = None,
                  heuristic: Optional[str] = None, **options):
         up.engines.Engine.__init__(self)
+        up.engines.mixins.OneshotPlannerMixin.__init__(self)
+        up.engines.mixins.PlanValidatorMixin.__init__(self)
         self._env = pytamer.tamer_env_new()
         if not weight is None:
             pytamer.tamer_env_set_float_option(self._env, 'weight', weight)
