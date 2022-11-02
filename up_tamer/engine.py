@@ -156,7 +156,7 @@ class EngineImpl(
                     return res
             heuristic_fun = fun
         if problem.kind.has_continuous_time(): # type: ignore
-            # pytamer.tamer_env_set_boolean_option(self._env, "simultaneity", 1)
+            pytamer.tamer_env_set_boolean_option(self._env, "simultaneity", 1)
             if self._heuristic is not None:
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
             elif heuristic is not None:
