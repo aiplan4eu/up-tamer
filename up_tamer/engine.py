@@ -128,13 +128,14 @@ class EngineImpl(
 
     def _validate(self, problem: 'up.model.AbstractProblem', plan: 'up.plans.Plan') -> 'up.engines.results.ValidationResult':
         assert isinstance(problem, up.model.Problem)
-        tproblem = self._convert_problem(problem)
+        tproblem, _ = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
         value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     def _solve(self, problem: 'up.model.AbstractProblem',
                callback: Optional[Callable[['up.engines.PlanGenerationResult'], None]] = None,
+               heuristic: Optional[Callable[["up.model.state.ROState"], Optional[float]]] = None,
                timeout: Optional[float] = None,
                output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
         assert isinstance(problem, up.model.Problem)
@@ -142,17 +143,31 @@ class EngineImpl(
             warnings.warn('Tamer does not support timeout.', UserWarning)
         if output_stream is not None:
             warnings.warn('Tamer does not support output stream.', UserWarning)
-        tproblem = self._convert_problem(problem)
+        tproblem, converter = self._convert_problem(problem)
+        heuristic_fun = None
+        if heuristic is not None:
+            def fun(ts: pytamer.tamer_classical_state,
+                    interpretation: pytamer.tamer_interpretation) -> float:
+                s = TState(ts, interpretation, converter, problem)
+                res = heuristic(s)
+                if res is None:
+                    return -1
+                else:
+                    return res
+            heuristic_fun = fun
         if problem.kind.has_continuous_time(): # type: ignore
+            pytamer.tamer_env_set_boolean_option(self._env, "simultaneity", 1)
             if self._heuristic is not None:
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
-            ttplan = pytamer.tamer_do_ftp_planning(tproblem)
+            elif heuristic is not None:
+                pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [])
+            ttplan = pytamer.tamer_do_ftp_planning(tproblem, heuristic_fun)
             if pytamer.tamer_ttplan_is_error(ttplan) == 1:
                 ttplan = None
         else:
             if self._heuristic is not None:
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
-            ttplan = self._solve_classical_problem(tproblem)
+            ttplan = self._solve_classical_problem(tproblem, heuristic_fun)
         plan = self._to_up_plan(problem, ttplan)
         return up.engines.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
 
@@ -349,7 +364,7 @@ class EngineImpl(
             raise NotImplementedError
         return pytamer.tamer_action_new(self._env, action.name, [], params, expressions, simulated_effects)
 
-    def _convert_problem(self, problem: 'up.model.Problem') -> pytamer.tamer_problem:
+    def _convert_problem(self, problem: 'up.model.Problem') -> Tuple[pytamer.tamer_problem, Converter]:
         user_types = []
         user_types_map = {}
         instances = []
@@ -421,7 +436,7 @@ class EngineImpl(
                                                                    converter.convert(g))
                 expressions.append(expr)
 
-        return pytamer.tamer_problem_new(self._env, actions, fluents, constants, instances, user_types, expressions)
+        return pytamer.tamer_problem_new(self._env, actions, fluents, constants, instances, user_types, expressions), converter
 
     def _to_up_plan(self, problem: 'up.model.Problem',
                     ttplan: Optional[pytamer.tamer_ttplan]) -> Optional['up.plans.Plan']:
@@ -446,8 +461,9 @@ class EngineImpl(
         else:
             return up.plans.SequentialPlan([a[1] for a in actions], problem.env)
 
-    def _solve_classical_problem(self, tproblem: pytamer.tamer_problem) -> Optional[pytamer.tamer_ttplan]:
-        potplan = pytamer.tamer_do_tsimple_planning(tproblem)
+    def _solve_classical_problem(self, tproblem: pytamer.tamer_problem,
+                                 heuristic_fun) -> Optional[pytamer.tamer_ttplan]:
+        potplan = pytamer.tamer_do_tsimple_planning(tproblem, heuristic_fun)
         if pytamer.tamer_potplan_is_error(potplan) == 1:
             return None
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
