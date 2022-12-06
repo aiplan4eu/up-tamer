@@ -27,7 +27,6 @@ from fractions import Fraction
 from typing import IO, Callable, Optional, Dict, List, Tuple, Union, Set, cast
 
 
-
 credits = Credits('Tamer',
                   'FBK Tamer Development Team',
                   'tamer@fbk.eu',
@@ -136,7 +135,6 @@ class EngineImpl(
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     def _solve(self, problem: 'up.model.AbstractProblem',
-               callback: Optional[Callable[['up.engines.PlanGenerationResult'], None]] = None,
                heuristic: Optional[Callable[["up.model.state.ROState"], Optional[float]]] = None,
                timeout: Optional[float] = None,
                output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
@@ -159,6 +157,7 @@ class EngineImpl(
             heuristic_fun = fun
         if problem.kind.has_continuous_time(): # type: ignore
             pytamer.tamer_env_set_boolean_option(self._env, "simultaneity", 1)
+            pytamer.tamer_env_set_boolean_option(self._env, "ftp-deordering-plan", 1)
             if self._heuristic is not None:
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
             elif heuristic is not None:
