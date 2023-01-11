@@ -34,7 +34,7 @@ class Converter(DagWalker):
         self._constants = constants
         self._instances = instances
         self._parameters = parameters
-        self._expr_manager = problem.env.expression_manager
+        self._expr_manager = problem.environment.expression_manager
         self._objects = {}
         for ut in problem.user_types:
             for obj in problem.objects(ut):

@@ -458,9 +458,9 @@ class EngineImpl(
                 params.append(converter.convert_back(p))
             actions.append((start, up.plans.ActionInstance(action, tuple(params)), duration))
         if problem.kind.has_continuous_time(): # type: ignore
-            return up.plans.TimeTriggeredPlan(actions, problem.env)
+            return up.plans.TimeTriggeredPlan(actions, problem.environment)
         else:
-            return up.plans.SequentialPlan([a[1] for a in actions], problem.env)
+            return up.plans.SequentialPlan([a[1] for a in actions], problem.environment)
 
     def _solve_classical_problem(self, tproblem: pytamer.tamer_problem,
                                  heuristic_fun) -> Optional[pytamer.tamer_ttplan]:
