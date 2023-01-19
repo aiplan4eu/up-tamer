@@ -146,9 +146,10 @@ class EngineImpl(
         tproblem, converter = self._convert_problem(problem)
         heuristic_fun = None
         if heuristic is not None:
+            static_fluents = problem.get_static_fluents()
             def fun(ts: pytamer.tamer_classical_state,
                     interpretation: pytamer.tamer_interpretation) -> float:
-                s = TState(ts, interpretation, converter, problem)
+                s = TState(ts, interpretation, converter, problem, static_fluents)
                 res = heuristic(s)
                 if res is None:
                     return -1
