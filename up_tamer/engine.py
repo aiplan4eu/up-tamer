@@ -160,7 +160,12 @@ class EngineImpl(
             pytamer.tamer_env_set_boolean_option(self._env, "simultaneity", 1)
             pytamer.tamer_env_set_boolean_option(self._env, "ftp-deordering-plan", 1)
             if self._heuristic is not None:
-                pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [self._heuristic])
+                if isinstance(self._heuristic, str):
+                    heuristics = [self._heuristic]
+                else:
+                    assert isinstance(self._heuristic, list)
+                    heuristics = self._heuristic
+                pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', heuristics)
             elif heuristic is not None:
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [])
             ttplan = pytamer.tamer_do_ftp_planning(tproblem, heuristic_fun)
