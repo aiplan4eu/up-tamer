@@ -103,6 +103,8 @@ class EngineImpl(
         supported_kind.set_problem_type("SIMPLE_NUMERIC_PLANNING") # type: ignore
         supported_kind.set_problem_type("GENERAL_NUMERIC_PLANNING") # type: ignore
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
+        supported_kind.set_effects_kind('INCREASE_EFFECTS')  # type: ignore
+        supported_kind.set_effects_kind('DECREASE_EFFECTS')  # type: ignore
         supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('EQUALITY') # type: ignore
@@ -337,8 +339,17 @@ class EngineImpl(
                                                                    converter.convert(c))
                 expressions.append(expr)
             for e in action.effects:
-                assert not e.is_conditional() and e.is_assignment()
-                ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), converter.convert(e.value))
+                assert not e.is_conditional()
+                if e.is_assignment():
+                    ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), converter.convert(e.value))
+                elif e.is_increase():
+                    val = pytamer.tamer_expr_make_plus(self._env, converter.convert(e.fluent), converter.convert(e.value))
+                    ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), val)
+                elif e.is_decrease():
+                    val = pytamer.tamer_expr_make_minus(self._env, converter.convert(e.fluent), converter.convert(e.value))
+                    ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), val)
+                else:
+                    raise NotImplementedError
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start, ass)
                 expressions.append(expr)
             expr = pytamer.tamer_expr_make_assign(self._env, pytamer.tamer_expr_make_duration_anchor(self._env),
