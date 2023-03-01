@@ -176,6 +176,8 @@ class EngineImpl(
         else:
             if self._heuristic is not None:
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
+            else:
+                pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', "hadd")
             ttplan = self._solve_classical_problem(tproblem, heuristic_fun)
         plan = self._to_up_plan(problem, ttplan)
         return up.engines.PlanGenerationResult(PlanGenerationResultStatus.UNSOLVABLE_PROVEN if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING, plan, self.name)
