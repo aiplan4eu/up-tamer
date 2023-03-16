@@ -36,7 +36,7 @@ credits = Credits('Tamer',
                   'Tamer offers the capability to generate a plan for classical, numerical and temporal problems.\nFor those kind of problems tamer also offers the possibility of validating a submitted plan.\nYou can find all the related publications here: https://tamer.fbk.eu/publications/'
                 )
 
-class TState(up.model.ROState):
+class TState(up.model.State):
     def __init__(self, ts: pytamer.tamer_state,
                  interpretation: pytamer.tamer_interpretation,
                  converter: Converter,
@@ -138,7 +138,7 @@ class EngineImpl(
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
     def _solve(self, problem: 'up.model.AbstractProblem',
-               heuristic: Optional[Callable[["up.model.state.ROState"], Optional[float]]] = None,
+               heuristic: Optional[Callable[["up.model.state.State"], Optional[float]]] = None,
                timeout: Optional[float] = None,
                output_stream: Optional[IO[str]] = None) -> 'up.engines.results.PlanGenerationResult':
         assert isinstance(problem, up.model.Problem)
