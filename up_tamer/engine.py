@@ -244,20 +244,16 @@ class EngineImpl(
         return pytamer.tamer_constant_new(self._env, constant.name, ttype, [], params, values)
 
     def _convert_timing(self, timing: 'up.model.Timing') -> pytamer.tamer_expr:
-        k = timing.delay
-        if isinstance(k, int):
-            c = pytamer.tamer_expr_make_rational_constant(self._env, k, 1)
-        elif isinstance(k, float):
-            k = Fraction(k)
-            c = pytamer.tamer_expr_make_rational_constant(self._env, k.numerator, k.denominator)
-        elif isinstance(k, Fraction):
-            c = pytamer.tamer_expr_make_rational_constant(self._env, k.numerator, k.denominator)
+        k = Fraction(timing.delay)
+        if k < 0:
+            c = pytamer.tamer_expr_make_rational_constant(self._env, -k.numerator, k.denominator)
         else:
-            raise NotImplementedError
+            c = pytamer.tamer_expr_make_rational_constant(self._env, k.numerator, k.denominator)
         if timing.is_from_start():
             if k == 0:
                 return self._tamer_start
             else:
+                assert k > 0
                 s = pytamer.tamer_expr_make_start_anchor(self._env)
                 r = pytamer.tamer_expr_make_plus(self._env, s, c)
                 return pytamer.tamer_expr_make_point_interval(self._env, r)
@@ -265,6 +261,7 @@ class EngineImpl(
             if k == 0:
                 return self._tamer_end
             else:
+                assert k < 0
                 s = pytamer.tamer_expr_make_end_anchor(self._env)
                 r = pytamer.tamer_expr_make_minus(self._env, s, c)
                 return pytamer.tamer_expr_make_point_interval(self._env, r)
