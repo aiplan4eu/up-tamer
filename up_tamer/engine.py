@@ -108,8 +108,8 @@ class EngineImpl(
         supported_kind.set_effects_kind('DECREASE_EFFECTS') # type: ignore
         supported_kind.set_effects_kind("STATIC_FLUENTS_IN_BOOLEAN_ASSIGNMENTS") # type: ignore
         supported_kind.set_effects_kind("STATIC_FLUENTS_IN_NUMERIC_ASSIGNMENTS") # type: ignore
-        supported_kind.set_effects_kind("NON_CONSTANT_BOOLEAN_ASSIGNMENTS") # type: ignore
-        supported_kind.set_effects_kind("NON_CONSTANT_NUMERIC_ASSIGNMENTS") # type: ignore
+        supported_kind.set_effects_kind("FLUENTS_IN_BOOLEAN_ASSIGNMENTS") # type: ignore
+        supported_kind.set_effects_kind("FLUENTS_IN_NUMERIC_ASSIGNMENTS") # type: ignore
         supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('EQUALITIES') # type: ignore
