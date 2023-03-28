@@ -93,10 +93,10 @@ class EngineImpl(
         supported_kind.set_problem_class('ACTION_BASED') # type: ignore
         supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
         supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS') # type: ignore
-        supported_kind.set_time('TIMED_EFFECT') # type: ignore
+        supported_kind.set_time('TIMED_EFFECTS') # type: ignore
         supported_kind.set_time('TIMED_GOALS') # type: ignore
         supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
-        supported_kind.set_expression_duration('STATIC_FLUENTS_IN_DURATION') # type: ignore
+        supported_kind.set_expression_duration('STATIC_FLUENTS_IN_DURATIONS') # type: ignore
         supported_kind.set_expression_duration('FLUENTS_IN_DURATION') # type: ignore
         supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
         supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
@@ -106,11 +106,13 @@ class EngineImpl(
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
         supported_kind.set_effects_kind('INCREASE_EFFECTS') # type: ignore
         supported_kind.set_effects_kind('DECREASE_EFFECTS') # type: ignore
-        supported_kind.set_effects_kind("NON_CONSTANT_BOOLEAN_ASSIGNMENT") # type: ignore
-        supported_kind.set_effects_kind("NON_CONSTANT_NUMERIC_ASSIGNMENT") # type: ignore
+        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_BOOLEAN_ASSIGNMENTS") # type: ignore
+        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_NUMERIC_ASSIGNMENTS") # type: ignore
+        supported_kind.set_effects_kind("NON_CONSTANT_BOOLEAN_ASSIGNMENTS") # type: ignore
+        supported_kind.set_effects_kind("NON_CONSTANT_NUMERIC_ASSIGNMENTS") # type: ignore
         supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
         supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
-        supported_kind.set_conditions_kind('EQUALITY') # type: ignore
+        supported_kind.set_conditions_kind('EQUALITIES') # type: ignore
         supported_kind.set_fluents_type('NUMERIC_FLUENTS') # type: ignore
         supported_kind.set_fluents_type('OBJECT_FLUENTS') # type: ignore
         supported_kind.set_simulated_entities('SIMULATED_EFFECTS') # type: ignore
