@@ -186,7 +186,7 @@ class EngineImpl(
         status = PlanGenerationResultStatus.UNSOLVABLE_INCOMPLETELY if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING
         res = up.engines.PlanGenerationResult(status, plan, self.name)
         if isinstance(plan, up.plans.TimeTriggeredPlan):
-            res = up.engines.results.new_temporal_plan_generation_result(
+            res = up.engines.results.correct_plan_generation_result(
                 res,
                 problem,
                 TAMER_EPSILON,
