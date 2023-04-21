@@ -92,7 +92,7 @@ class Converter(DagWalker):
     def walk_implies(self, expression: 'FNode',
                      args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
         assert len(args) == 2
-        return pytamer.tamer_expr_make_implies(self._env, args[0], args[1])
+        return pytamer.tamer_expr_make_imply(self._env, args[0], args[1])
 
     def walk_iff(self, expression: 'FNode',
                  args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
