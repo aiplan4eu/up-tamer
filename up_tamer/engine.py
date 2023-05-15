@@ -108,7 +108,7 @@ class EngineImpl(
         supported_kind.set_typing('FLAT_TYPING') # type: ignore
 
         supported_kind.set_parameters("BOOL_FLUENT_PARAMETERS")
-        supported_kind.set_parameters("INT_FLUENT_PARAMETERS")
+        supported_kind.set_parameters("BOUNDED_INT_FLUENT_PARAMETERS")
         supported_kind.set_parameters("BOOL_ACTION_PARAMETERS")
         supported_kind.set_parameters("BOUNDED_INT_ACTION_PARAMETERS")
 
