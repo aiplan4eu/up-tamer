@@ -36,8 +36,6 @@ credits = Credits('Tamer',
                   'Tamer offers the capability to generate a plan for classical, numerical and temporal problems.\nFor those kind of problems tamer also offers the possibility of validating a submitted plan.\nYou can find all the related publications here: https://tamer.fbk.eu/publications/'
                 )
 
-TAMER_EPSILON = Fraction("0.01")
-
 class TState(up.model.State):
     def __init__(self, ts: pytamer.tamer_state,
                  interpretation: pytamer.tamer_interpretation,
@@ -146,6 +144,13 @@ class EngineImpl(
         assert isinstance(problem, up.model.Problem)
         tproblem, _ = self._convert_problem(problem)
         tplan = self._convert_plan(tproblem, plan)
+        epsilon = None
+        if problem.epsilon is not None:
+            epsilon = problem.epsilon
+        elif plan.kind == up.plans.PlanKind.TIME_TRIGGERED_PLAN:
+            epsilon = plan.extract_epsilon(problem)
+        if epsilon is not None:
+            pytamer.tamer_env_set_string_option(self._env, "plan-epsilon", str(epsilon))
         value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
         return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
 
@@ -183,6 +188,12 @@ class EngineImpl(
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', heuristics)
             elif heuristic is not None:
                 pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', [])
+            else:
+                pytamer.tamer_env_set_vector_string_option(self._env, 'ftp-heuristic', ['hadd'])
+            if problem.epsilon is not None:
+                pytamer.tamer_env_set_string_option(self._env, "plan-epsilon", str(problem.epsilon))
+            else:
+                pytamer.tamer_env_set_string_option(self._env, "plan-epsilon", "0.01")
             ttplan = pytamer.tamer_do_ftp_planning(tproblem, heuristic_fun)
             if pytamer.tamer_ttplan_is_error(ttplan) == 1:
                 ttplan = None
@@ -194,14 +205,7 @@ class EngineImpl(
             ttplan = self._solve_classical_problem(tproblem, heuristic_fun)
         plan = self._to_up_plan(problem, ttplan)
         status = PlanGenerationResultStatus.UNSOLVABLE_INCOMPLETELY if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING
-        res = up.engines.PlanGenerationResult(status, plan, self.name)
-        if isinstance(plan, up.plans.TimeTriggeredPlan):
-            res = up.engines.results.correct_plan_generation_result(
-                res,
-                problem,
-                TAMER_EPSILON,
-            )
-        return res
+        return up.engines.PlanGenerationResult(status, plan, self.name)
 
     def _convert_type(self, typename: 'up.model.Type',
                       user_types_map: Dict['up.model.Type', pytamer.tamer_type]) -> pytamer.tamer_type:
