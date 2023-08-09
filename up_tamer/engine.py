@@ -24,6 +24,7 @@ from unified_planning.model import ProblemKind
 from unified_planning.engines import PlanGenerationResultStatus, ValidationResult, ValidationResultStatus, Credits
 from up_tamer.converter import Converter
 from fractions import Fraction
+from ConfigSpace import ConfigurationSpace
 from typing import IO, Callable, Optional, Dict, List, Tuple, Union, Set, cast
 
 
@@ -141,6 +142,10 @@ class EngineImpl(
     @staticmethod
     def get_credits(**kwargs) -> Optional[up.engines.Credits]:
         return credits
+
+    @staticmethod
+    def get_configuration_space() -> ConfigurationSpace:
+        return ConfigurationSpace(space={"weight": (0.0, 1.0), "heuristic": ["hadd", "hlandmarks", "hmax", "hff", "blind"]})
 
     def _validate(self, problem: 'up.model.AbstractProblem', plan: 'up.plans.Plan') -> 'up.engines.results.ValidationResult':
         assert isinstance(problem, up.model.Problem)
