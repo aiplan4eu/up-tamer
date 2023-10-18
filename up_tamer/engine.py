@@ -441,6 +441,8 @@ class EngineImpl(
         converter = Converter(self._env, problem, fluents_map, {}, instances_map)
         constants_assignments = {}
         for k, v in problem.initial_values.items():
+            if k.type.is_real_type() and v.is_int_constant():
+                v = problem.environment.expression_manager.Real(Fraction(v.constant_value()))
             if k.fluent() not in static_fluents:
                 ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(k), converter.convert(v))
                 expr = pytamer.tamer_expr_make_temporal_expression(self._env, self._tamer_start, ass)
