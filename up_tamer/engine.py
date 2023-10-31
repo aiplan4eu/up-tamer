@@ -90,41 +90,40 @@ class EngineImpl(
 
     @staticmethod
     def supported_kind() -> ProblemKind:
-        supported_kind = ProblemKind()
-        supported_kind.set_problem_class('ACTION_BASED') # type: ignore
-        supported_kind.set_time('CONTINUOUS_TIME') # type: ignore
-        supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS') # type: ignore
-        supported_kind.set_time('TIMED_EFFECTS') # type: ignore
-        supported_kind.set_time('TIMED_GOALS') # type: ignore
-        supported_kind.set_time('DURATION_INEQUALITIES') # type: ignore
-        supported_kind.set_expression_duration('STATIC_FLUENTS_IN_DURATIONS') # type: ignore
-        supported_kind.set_expression_duration('FLUENTS_IN_DURATIONS') # type: ignore
-        supported_kind.set_numbers('DISCRETE_NUMBERS') # type: ignore
-        supported_kind.set_numbers('CONTINUOUS_NUMBERS') # type: ignore
-        supported_kind.set_numbers("BOUNDED_TYPES") # type: ignore
-        supported_kind.set_problem_type("SIMPLE_NUMERIC_PLANNING") # type: ignore
-        supported_kind.set_problem_type("GENERAL_NUMERIC_PLANNING") # type: ignore
-        supported_kind.set_typing('FLAT_TYPING') # type: ignore
-
+        supported_kind = ProblemKind(version=2)
+        supported_kind.set_problem_class('ACTION_BASED')
+        supported_kind.set_time('CONTINUOUS_TIME')
+        supported_kind.set_time('INTERMEDIATE_CONDITIONS_AND_EFFECTS')
+        supported_kind.set_time('TIMED_EFFECTS')
+        supported_kind.set_time('TIMED_GOALS')
+        supported_kind.set_time('DURATION_INEQUALITIES')
+        supported_kind.set_expression_duration('STATIC_FLUENTS_IN_DURATIONS')
+        supported_kind.set_expression_duration('FLUENTS_IN_DURATIONS')
+        supported_kind.set_expression_duration("INT_TYPE_DURATIONS")
+        supported_kind.set_expression_duration("REAL_TYPE_DURATIONS")
+        supported_kind.set_numbers("BOUNDED_TYPES")
+        supported_kind.set_problem_type("SIMPLE_NUMERIC_PLANNING")
+        supported_kind.set_problem_type("GENERAL_NUMERIC_PLANNING")
+        supported_kind.set_typing('FLAT_TYPING')
         supported_kind.set_parameters("BOOL_FLUENT_PARAMETERS")
         supported_kind.set_parameters("BOUNDED_INT_FLUENT_PARAMETERS")
         supported_kind.set_parameters("BOOL_ACTION_PARAMETERS")
         supported_kind.set_parameters("BOUNDED_INT_ACTION_PARAMETERS")
-
-        supported_kind.set_effects_kind('INCREASE_EFFECTS') # type: ignore
-        supported_kind.set_effects_kind('DECREASE_EFFECTS') # type: ignore
-        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_BOOLEAN_ASSIGNMENTS") # type: ignore
-        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_NUMERIC_ASSIGNMENTS") # type: ignore
-        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_OBJECT_ASSIGNMENTS") # type: ignore
-        supported_kind.set_effects_kind("FLUENTS_IN_BOOLEAN_ASSIGNMENTS") # type: ignore
-        supported_kind.set_effects_kind("FLUENTS_IN_NUMERIC_ASSIGNMENTS") # type: ignore
-        supported_kind.set_effects_kind("FLUENTS_IN_OBJECT_ASSIGNMENTS") # type: ignore
-        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS') # type: ignore
-        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS') # type: ignore
-        supported_kind.set_conditions_kind('EQUALITIES') # type: ignore
-        supported_kind.set_fluents_type('NUMERIC_FLUENTS') # type: ignore
-        supported_kind.set_fluents_type('OBJECT_FLUENTS') # type: ignore
-        supported_kind.set_simulated_entities('SIMULATED_EFFECTS') # type: ignore
+        supported_kind.set_effects_kind('INCREASE_EFFECTS')
+        supported_kind.set_effects_kind('DECREASE_EFFECTS')
+        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_BOOLEAN_ASSIGNMENTS")
+        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_NUMERIC_ASSIGNMENTS")
+        supported_kind.set_effects_kind("STATIC_FLUENTS_IN_OBJECT_ASSIGNMENTS")
+        supported_kind.set_effects_kind("FLUENTS_IN_BOOLEAN_ASSIGNMENTS")
+        supported_kind.set_effects_kind("FLUENTS_IN_NUMERIC_ASSIGNMENTS")
+        supported_kind.set_effects_kind("FLUENTS_IN_OBJECT_ASSIGNMENTS")
+        supported_kind.set_conditions_kind('NEGATIVE_CONDITIONS')
+        supported_kind.set_conditions_kind('DISJUNCTIVE_CONDITIONS')
+        supported_kind.set_conditions_kind('EQUALITIES')
+        supported_kind.set_fluents_type("INT_FLUENTS")
+        supported_kind.set_fluents_type("REAL_FLUENTS")
+        supported_kind.set_fluents_type('OBJECT_FLUENTS')
+        supported_kind.set_simulated_entities('SIMULATED_EFFECTS')
         return supported_kind
 
     @staticmethod
@@ -183,7 +182,7 @@ class EngineImpl(
                 else:
                     return res
             heuristic_fun = fun
-        if problem.kind.has_continuous_time(): # type: ignore
+        if problem.kind.has_continuous_time():
             pytamer.tamer_env_set_boolean_option(self._env, "simultaneity", 1)
             pytamer.tamer_env_set_boolean_option(self._env, "ftp-deordering-plan", 1)
             if self._heuristic is not None:
@@ -507,7 +506,7 @@ class EngineImpl(
             for p in pytamer.tamer_ttplan_step_get_parameters(s):
                 params.append(converter.convert_back(p))
             actions.append((start, up.plans.ActionInstance(action, tuple(params)), duration))
-        if problem.kind.has_continuous_time(): # type: ignore
+        if problem.kind.has_continuous_time():
             return up.plans.TimeTriggeredPlan(actions, problem.environment)
         else:
             return up.plans.SequentialPlan([a[1] for a in actions], problem.environment)
