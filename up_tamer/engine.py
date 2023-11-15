@@ -14,6 +14,7 @@
 
 
 import sys
+import time
 import warnings
 import unified_planning as up
 import pytamer # type: ignore
@@ -157,8 +158,11 @@ class EngineImpl(
             epsilon = plan.extract_epsilon(problem)
         if epsilon is not None:
             pytamer.tamer_env_set_string_option(self._env, "plan-epsilon", str(epsilon))
+        start = time.time()
         value = pytamer.tamer_ttplan_validate(tproblem, tplan) == 1
-        return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID, self.name, [])
+        solving_time = time.time() - start
+        return ValidationResult(ValidationResultStatus.VALID if value else ValidationResultStatus.INVALID,
+                                self.name, [], metrics={"engine_internal_time": str(solving_time)})
 
     def _solve(self, problem: 'up.model.AbstractProblem',
                heuristic: Optional[Callable[["up.model.state.State"], Optional[float]]] = None,
@@ -200,7 +204,9 @@ class EngineImpl(
                 pytamer.tamer_env_set_string_option(self._env, "plan-epsilon", str(problem.epsilon))
             else:
                 pytamer.tamer_env_set_string_option(self._env, "plan-epsilon", "0.01")
+            start = time.time()
             ttplan = pytamer.tamer_do_ftp_planning(tproblem, heuristic_fun)
+            solving_time = time.time() - start
             if pytamer.tamer_ttplan_is_error(ttplan) == 1:
                 ttplan = None
         else:
@@ -208,10 +214,10 @@ class EngineImpl(
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', self._heuristic)
             else:
                 pytamer.tamer_env_set_string_option(self._env, 'tsimple-heuristic', "hadd")
-            ttplan = self._solve_classical_problem(tproblem, heuristic_fun)
+            ttplan, solving_time = self._solve_classical_problem(tproblem, heuristic_fun)
         plan = self._to_up_plan(problem, ttplan)
         status = PlanGenerationResultStatus.UNSOLVABLE_INCOMPLETELY if plan is None else PlanGenerationResultStatus.SOLVED_SATISFICING
-        return up.engines.PlanGenerationResult(status, plan, self.name)
+        return up.engines.PlanGenerationResult(status, plan, self.name, metrics={"engine_internal_time": str(solving_time)})
 
     def _convert_type(self, typename: 'up.model.Type',
                       user_types_map: Dict['up.model.Type', pytamer.tamer_type]) -> pytamer.tamer_type:
@@ -512,12 +518,14 @@ class EngineImpl(
             return up.plans.SequentialPlan([a[1] for a in actions], problem.environment)
 
     def _solve_classical_problem(self, tproblem: pytamer.tamer_problem,
-                                 heuristic_fun) -> Optional[pytamer.tamer_ttplan]:
+                                 heuristic_fun) -> Tuple[Optional[pytamer.tamer_ttplan], float]:
+        start = time.time()
         potplan = pytamer.tamer_do_tsimple_planning(tproblem, heuristic_fun)
+        solving_time = time.time() - start
         if pytamer.tamer_potplan_is_error(potplan) == 1:
-            return None
+            return None, solving_time
         ttplan = pytamer.tamer_ttplan_from_potplan(potplan)
-        return ttplan
+        return ttplan, solving_time
 
     def _convert_plan(self, tproblem: pytamer.tamer_problem, plan: 'up.plans.Plan') -> pytamer.tamer_ttplan:
         actions_map = {}
