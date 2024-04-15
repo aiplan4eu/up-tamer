@@ -404,9 +404,17 @@ class EngineImpl(
                     expressions.append(expr)
             for t, le in action.effects.items():
                 for e in le:
-                    assert not e.is_conditional() and e.is_assignment()
-                    ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent),
-                                                         converter.convert(e.value))
+                    assert not e.is_conditional()
+                    if e.is_assignment():
+                        ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), converter.convert(e.value))
+                    elif e.is_increase():
+                        val = pytamer.tamer_expr_make_plus(self._env, converter.convert(e.fluent), converter.convert(e.value))
+                        ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), val)
+                    elif e.is_decrease():
+                        val = pytamer.tamer_expr_make_minus(self._env, converter.convert(e.fluent), converter.convert(e.value))
+                        ass = pytamer.tamer_expr_make_assign(self._env, converter.convert(e.fluent), val)
+                    else:
+                        raise NotImplementedError
                     expr = pytamer.tamer_expr_make_temporal_expression(self._env,
                                                                        self._convert_timing(t),
                                                                        ass)

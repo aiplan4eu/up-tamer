@@ -142,8 +142,11 @@ class Converter(DagWalker):
 
     def walk_plus(self, expression: 'FNode',
                   args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
-        assert len(args) == 2
-        return pytamer.tamer_expr_make_plus(self._env, args[0], args[1])
+        assert len(args) > 0
+        res = args[0]
+        for i in range(1, len(args)):
+            res = pytamer.tamer_expr_make_plus(self._env, res, args[i])
+        return res
 
     def walk_minus(self, expression: 'FNode',
                    args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
@@ -152,8 +155,11 @@ class Converter(DagWalker):
 
     def walk_times(self, expression: 'FNode',
                    args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
-        assert len(args) == 2
-        return pytamer.tamer_expr_make_times(self._env, args[0], args[1])
+        assert len(args) > 0
+        res = args[0]
+        for i in range(1, len(args)):
+            res = pytamer.tamer_expr_make_times(self._env, res, args[i])
+        return res
 
     def walk_div(self, expression: 'FNode',
                  args: List[pytamer.tamer_expr]) -> pytamer.tamer_expr:
