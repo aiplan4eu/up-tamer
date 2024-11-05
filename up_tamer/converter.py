@@ -15,7 +15,7 @@
 
 import unified_planning as up
 from unified_planning.model import FNode
-from unified_planning.model.walkers import DagWalker
+from unified_planning.model.walkers import DagWalker, Dnf
 import pytamer # type: ignore
 from fractions import Fraction
 from typing import Dict, List
@@ -30,6 +30,7 @@ class Converter(DagWalker):
                  parameters: Dict['up.model.Parameter', pytamer.tamer_param]={}):
         DagWalker.__init__(self)
         self._env = env
+        self._to_dnf = Dnf(problem.environment)
         self._fluents = fluents
         self._constants = constants
         self._instances = instances
@@ -42,7 +43,7 @@ class Converter(DagWalker):
 
     def convert(self, expression: 'FNode') -> pytamer.tamer_expr:
         """Converts the given expression."""
-        return self.walk(expression)
+        return self.walk(self._to_dnf.get_dnf_expression(expression))
 
     def convert_back(self, expression: pytamer.tamer_expr) -> 'FNode':
         if pytamer.tamer_expr_is_boolean_constant(self._env, expression) == 1:
