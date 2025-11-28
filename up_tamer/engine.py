@@ -67,13 +67,16 @@ class EngineImpl(
     """ Implementation of the up-tamer Engine. """
 
     def __init__(self, weight: Optional[float] = None,
-                 heuristic: Optional[str] = None, **options):
+                 heuristic: Optional[str] = None,
+                 weak_equality: bool = False, **options):
         up.engines.Engine.__init__(self)
         up.engines.mixins.OneshotPlannerMixin.__init__(self)
         up.engines.mixins.PlanValidatorMixin.__init__(self)
         self._env = pytamer.tamer_env_new()
         if not weight is None:
             pytamer.tamer_env_set_float_option(self._env, 'weight', weight)
+        if weak_equality:
+            pytamer.tamer_env_set_boolean_option(self._env, "weak-equality", 1)
         self._heuristic = heuristic
         if len(options) > 0:
             raise up.exceptions.UPUsageError('Custom options not supported!')
