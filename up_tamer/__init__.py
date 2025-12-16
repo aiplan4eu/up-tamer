@@ -16,7 +16,7 @@ import subprocess
 import re
 
 
-VERSION = (1, 1, 5)
+VERSION = (1, 1, 6)
 __version__ = ".".join(str(x) for x in VERSION)
 
 try:
